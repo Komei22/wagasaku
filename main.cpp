@@ -1,6 +1,7 @@
 // main.cpp
 
 #include <iostream>
+#include <fstream>
 #include <cstdlib>
 #include <dirent.h>
 #include "fileio.hpp"
@@ -41,12 +42,14 @@ int main() {
         students.push_back(filein.InputStudentData(filename, teachers));
     }
     
-    
-
-
-    
+    // 出力用ファイル
+    ofstream lp("./lp/netz.lp");
     // 先生の生徒に対する割り当て可能性
-    convert_machine.GenerateTeacherAssignVariable(students, teachers);
+    convert_machine.GenerateTeacherAssignFomula(lp, students, teachers);
+    // 生徒の先生に対する割り当て可能性
+    convert_machine.GenerateStudentAssignFomula(lp, students, teachers);
+    // 高校生に対するコマの制限
+    convert_machine.GenerateHSFomula(lp, students, teachers);
     
     return 0;
 }

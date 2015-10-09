@@ -21,11 +21,11 @@ public:
 	// 生徒情報の読み込み
 	STUDENT InputStudentData(string, vector<TEACHER>);
     
-    // 文字列の出力
-    void OutputString(string);
+    // 文字列の出力 空白を渡すと改行
+    void OutputString(ofstream &, string);
     
     // 制約式の出力
-    void OutputSubjectTo(int, int, int, int, int);
+    void OutputSubjectTo(ofstream &, string, int, int, int, int, int);
     
 };
 

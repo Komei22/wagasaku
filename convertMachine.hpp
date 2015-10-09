@@ -4,6 +4,7 @@
 #define __CONVERTMACHINE_HPP
 
 #include <string>
+#include <fstream>
 
 #include "teacher.hpp"
 #include "student.hpp"
@@ -18,8 +19,15 @@ class ConvertMachine {
 public:
 	//講習期間
 	vector<string> piriod;
-
-	void GenerateTeacherAssignVariable(STUDENTS, TEACHERS);
+    
+    // 講師の割り当て可能性の制約式
+	void GenerateTeacherAssignFomula(ofstream& ,STUDENTS, TEACHERS);
+    
+    // 生徒の割り当て可能性の制約式
+    void GenerateStudentAssignFomula(ofstream& ,STUDENTS, TEACHERS);
+    
+    // 高校生のコマに対する制約式
+    void GenerateHSFomula(ofstream& ,STUDENTS, TEACHERS);
 
 };
 

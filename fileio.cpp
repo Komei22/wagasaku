@@ -187,14 +187,14 @@ STUDENT FILEIO::InputStudentData(string filename, vector<TEACHER> teachers) {
 }
 
 
-void FILEIO::OutputString(string str) {
-    ofstream lp("./lp/netz.lp");
+void FILEIO::OutputString(ofstream& lp, string str) {
+//    ofstream lp("./lp/netz.lp");
     lp << format("%s") % str << endl;
 }
 
-void FILEIO::OutputSubjectTo(int teacher, int student, int subject, int day, int coma) {
-    ofstream lp("./lp/netz.lp");
-    lp << format("+ x_%s_%s_%s_%s_%s ") % teacher % student % subject % day % coma;
+void FILEIO::OutputSubjectTo(ofstream& lp, string oper, int teacher, int student, int subject, int day, int coma) {
+//    ofstream lp("./lp/netz.lp");
+    lp << format("%s x_%s_%s_%s_%s_%s ") %oper % teacher % student % subject % day % coma;
 }
 
 
