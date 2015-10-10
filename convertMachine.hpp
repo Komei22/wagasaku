@@ -21,10 +21,13 @@ public:
 	vector<string> piriod;
     
     // 講師の割り当て可能性の制約式
-	void GenerateTeacherAssignFomula(ofstream& ,STUDENTS, TEACHERS);
+	void GenerateTeacherAssignFomula(ofstream&,STUDENTS, TEACHERS);
     
     // 生徒の割り当て可能性の制約式
-    void GenerateStudentAssignFomula(ofstream& ,STUDENTS, TEACHERS);
+    void GenerateStudentAssignFomula(ofstream&,STUDENTS, TEACHERS);
+    
+    // 生徒のコマ数の制約式
+    void GenerateComaFomula(ofstream& ,STUDENTS, TEACHERS);
     
     // 高校生のコマに対する制約式
     void GenerateHSFomula(ofstream& ,STUDENTS, TEACHERS);

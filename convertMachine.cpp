@@ -1,15 +1,17 @@
 // convertMachine.cpp
+#include <boost/lexical_cast.hpp>
 #include <boost/foreach.hpp>
+#include <boost/format.hpp>
 #include "convertMachine.hpp"
 #include "fileio.hpp"
 
 using namespace std;
+using namespace boost;
 
 FILEIO fileout;
 
 void ConvertMachine::GenerateTeacherAssignFomula(ofstream& lp, STUDENTS students, TEACHERS teachers) {
     // ある講師のあるコマに生徒の科目を割り当てられるかどうか
-    fileout.OutputString(lp, "subject to");
     BOOST_FOREACH(TEACHER teacher, teachers) {
         for (int day = 0; day < piriod.size(); day++) {
             for (int coma = 0; coma < teacher.schedule[day].size(); coma++) {
@@ -34,7 +36,6 @@ void ConvertMachine::GenerateTeacherAssignFomula(ofstream& lp, STUDENTS students
                                     }
                                 }
                             }
-                            
                         }
                     }
                 }
@@ -70,7 +71,6 @@ void ConvertMachine::GenerateStudentAssignFomula(ofstream& lp, STUDENTS students
                                     }
                                 }
                             }
-                            
                         }
                     }
                 }
@@ -78,6 +78,46 @@ void ConvertMachine::GenerateStudentAssignFomula(ofstream& lp, STUDENTS students
             }
         }
     }
+}
+
+void ConvertMachine::GenerateComaFomula(ofstream& lp,STUDENTS students, TEACHERS teachers) {
+    BOOST_FOREACH(STUDENT student, students) {
+        for (int subject = 0; subject < student.subject.size(); subject++) {
+            bool isOutput = false;
+            BOOST_FOREACH(TEACHER teacher, teachers) {
+                for (int day = 0; day < piriod.size(); day++) {
+                    for (int coma = 0; coma < student.schedule[day].size(); coma++) {
+                        if (teacher.teach_subject[subject] == 1 && student.subject[subject] > 0) {  //ある科目が指導できるか、その生徒がその教科を取っているか
+                            if (student.nomination_teacher_id[subject].empty()) {  //講師の指定がなかった場合
+                                if (teacher.schedule[day][coma] == 1 && student.schedule[day][coma] == 1) {  //どちらのスケジュールも空いていたら
+                                    //x_teacherid_studentid_subject_day_comaを生成
+                                    fileout.OutputSubjectTo(lp, "+", teacher.id, student.id, subject, day, coma);
+                                    isOutput = true;
+                                }
+                            } else {  //講師の指定があった場合
+                                BOOST_FOREACH(int nominated_teacher_id, student.nomination_teacher_id[subject]) {
+                                    if (nominated_teacher_id == teacher.id) {  //ある生徒のある科目の指定講師だった場合
+                                        if (teacher.schedule[day][coma] == 1 && student.schedule[day][coma] == 1) {  //どちらのスケジュールも空いていたら
+                                            //x_teacherid_studentid_subject_day_comaを生成
+                                            fileout.OutputSubjectTo(lp, "+", teacher.id, student.id, subject, day, coma);
+                                            isOutput = true;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            if(isOutput) {
+                string subject_num = lexical_cast<string>(student.subject[subject]);
+                fileout.OutputString(lp, "= " + subject_num);
+            }
+        }
+        
+    }
+    
+    
 }
 
 
@@ -101,13 +141,11 @@ void ConvertMachine::GenerateHSFomula(ofstream& lp, STUDENTS students, TEACHERS 
                                 }
                             }
                         }
-                        
                     }
                 }
             }
         }
     }
-    
 }
 
 

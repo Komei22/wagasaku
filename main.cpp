@@ -9,7 +9,7 @@
 
 using namespace std;
 
-FILEIO filein;
+FILEIO fileio;
 
 ConvertMachine convert_machine;
 
@@ -26,7 +26,7 @@ int main() {
         string filename;
         filename = (string)entry->d_name;
         if (filename[0] == '.') continue;
-        teachers.push_back(filein.InputTeacherData(filename, convert_machine));
+        teachers.push_back(fileio.InputTeacherData(filename, convert_machine));
     }
     
     // studentオブジェクトを生成
@@ -39,17 +39,23 @@ int main() {
         string filename;
         filename = (string)entry->d_name;
         if (filename[0] == '.') continue;
-        students.push_back(filein.InputStudentData(filename, teachers));
+        students.push_back(fileio.InputStudentData(filename, teachers));
     }
     
     // 出力用ファイル
     ofstream lp("./lp/netz.lp");
+    fileio.OutputString(lp, "maximize");
+    
+    fileio.OutputString(lp, "subject to");
     // 先生の生徒に対する割り当て可能性
     convert_machine.GenerateTeacherAssignFomula(lp, students, teachers);
     // 生徒の先生に対する割り当て可能性
     convert_machine.GenerateStudentAssignFomula(lp, students, teachers);
+    // 生徒のコマ数の制限
+    convert_machine.GenerateComaFomula(lp, students, teachers);
     // 高校生に対するコマの制限
     convert_machine.GenerateHSFomula(lp, students, teachers);
+    fileio.OutputString(lp, "end");
     
     return 0;
 }
