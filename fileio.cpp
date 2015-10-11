@@ -192,7 +192,7 @@ void FILEIO::OutputString(ofstream& lp, string str) {
     lp << format("%s") % str << endl;
 }
 
-void FILEIO::OutputSubjectTo(ofstream& lp, string oper, int teacher, int student, int subject, int day, int coma) {
+void FILEIO::OutputVariable(ofstream& lp, string oper, int teacher, int student, int subject, int day, int coma) {
 //    ofstream lp("./lp/netz.lp");
     lp << format("%s x_%s_%s_%s_%s_%s ") %oper % teacher % student % subject % day % coma;
 }

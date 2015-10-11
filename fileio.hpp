@@ -25,7 +25,7 @@ public:
     void OutputString(ofstream &, string);
     
     // 制約式の出力
-    void OutputSubjectTo(ofstream &, string, int, int, int, int, int);
+    void OutputVariable(ofstream &, string, int, int, int, int, int);
     
 };
 
