@@ -65,5 +65,10 @@ int main() {
     fileio.OutputString(lp, "y_M y_m");
     fileio.OutputString(lp, "\nend");
     
+    // ソルバーで問題を解く
+    system("./solver/glpsol --cpxlp ./lp/netz.lp -o ./sol/netz.sol");
+    
+    
+    
     return 0;
 }
