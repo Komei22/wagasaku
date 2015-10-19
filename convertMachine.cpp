@@ -118,10 +118,7 @@ void ConvertMachine::GenerateComaFomula(ofstream& lp,STUDENTS students, TEACHERS
                 fileout.OutputString(lp, "= " + subject_num);
             }
         }
-        
     }
-    
-    
 }
 
 

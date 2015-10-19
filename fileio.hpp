@@ -27,6 +27,8 @@ public:
     // 制約式の出力
     void OutputVariable(ofstream &, string, int, int, int, int, int);
     
+    // 変数の読み込み
+    
 };
 
 
