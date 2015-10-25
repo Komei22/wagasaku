@@ -37,6 +37,7 @@ public:
     
     // 変数解析
     void VariableAnalysis(RepairVeiw &, string);
+
 };
 
 

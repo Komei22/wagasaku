@@ -76,6 +76,12 @@ int main() {
     
     // 解の読み込み
     fileio.InputSOLfile(repair_veiw);
+//    デバッグ用
+//    BOOST_FOREACH(vector<int> variable, repair_veiw.assign) {
+//        BOOST_FOREACH(int inf, variable) {
+//            cout << inf;
+//        }cout << endl;
+//    }
     
     //解の解析
     repair_veiw.DecodeSchedule(students, teachers, convert_machine);

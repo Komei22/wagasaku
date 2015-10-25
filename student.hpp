@@ -35,7 +35,7 @@ typedef vector< vector<int> > SCHEDULE;
 // 科目ごとの指定講師 vector[教科][教師名]
 typedef vector< vector<string> > TEACHER_NOMINATION;
 
-// 科目ごとの講師指定を
+// 科目ごとの講師指定
 typedef vector< vector<int> > NOMINATION_TEACHER_ID;
 
 class STUDENT {
