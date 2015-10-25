@@ -14,34 +14,34 @@ using namespace boost;
 
 TEACHER FILEIO::InputTeacherData(string filename, ConvertMachine& convert_machine) {
     const string inFile = "./teacher/"+filename;
-	ifstream ifs(inFile.c_str());
-	if(!ifs) {
-		cout << "Error:Input data file not found" << endl;
-		exit(1);
-	}
-	
-	TEACHER teacher;
-	string line;
-	vector<int> schedule_per_day;
-	INPUT_STATE state = FIRST_STATE;
-	while(getline(ifs, line)) {
-		line = line+',';
-		int column = 0;
-		typedef tokenizer<escaped_list_separator<char> > ESC_TOKENIZER;
-		ESC_TOKENIZER tokens(line);
-		for(ESC_TOKENIZER::iterator token_iter = tokens.begin(); token_iter != tokens.end(); ++token_iter) {
-			if(*token_iter == "") continue;
-			if(*token_iter == "講師名") {
-				state = IS_NAME;
-				break;
-			} else if(*token_iter == "指導科目") {
-				state = IS_SUBJECT;
-				break;
-			} else if(*token_iter == "スケジュール") {
-				state = IS_SCHEDULE;
-				goto LINE_SKIP;
-			}
-
+    ifstream ifs(inFile.c_str());
+    if(!ifs) {
+        cout << "Error:Input data file not found" << endl;
+        exit(1);
+    }
+    
+    TEACHER teacher;
+    string line;
+    vector<int> schedule_per_day;
+    INPUT_STATE state = FIRST_STATE;
+    while(getline(ifs, line)) {
+        line = line+',';
+        int column = 0;
+        typedef tokenizer<escaped_list_separator<char> > ESC_TOKENIZER;
+        ESC_TOKENIZER tokens(line);
+        for(ESC_TOKENIZER::iterator token_iter = tokens.begin(); token_iter != tokens.end(); ++token_iter) {
+            if(*token_iter == "") continue;
+            if(*token_iter == "講師名") {
+                state = IS_NAME;
+                break;
+            } else if(*token_iter == "指導科目") {
+                state = IS_SUBJECT;
+                break;
+            } else if(*token_iter == "スケジュール") {
+                state = IS_SCHEDULE;
+                goto LINE_SKIP;
+            }
+            
             switch (state) {
                 case IS_NAME:
                     teacher.name = *token_iter;
@@ -61,33 +61,33 @@ TEACHER FILEIO::InputTeacherData(string filename, ConvertMachine& convert_machin
                 default:
                     break;
             }
-		}
-		if(state == IS_SCHEDULE) {
-			teacher.schedule.push_back(schedule_per_day);
-			schedule_per_day.clear();
-		}
+        }
+        if(state == IS_SCHEDULE) {
+            teacher.schedule.push_back(schedule_per_day);
+            schedule_per_day.clear();
+        }
     LINE_SKIP: ;
-	}
-
-// 	// デバッグ用
-//	 cout << "講師名" << endl;
-//	 cout << teacher.name << endl;
-//	 cout << "指導科目" << endl;
-//	 BOOST_FOREACH(int val, teacher.teach_subject) {
-//	 	cout << val;
-//	 }cout << endl;
-//	 cout << "スケジュール" << endl;
-//	 BOOST_FOREACH(vector<int> v, teacher.schedule) {
-//	 	BOOST_FOREACH(int val, v) {
-//	 		cout << val;
-//	 	}
-//	 }cout << endl;
-//    // デバッグ用 convert_machine class
-//     cout << "講習期間" << endl;
-//     BOOST_FOREACH(string str1, convert_machine.piriod) {
-//     	cout << str1;
-//     }cout << endl;
-	return teacher;
+    }
+    
+    // 	// デバッグ用
+    //	 cout << "講師名" << endl;
+    //	 cout << teacher.name << endl;
+    //	 cout << "指導科目" << endl;
+    //	 BOOST_FOREACH(int val, teacher.teach_subject) {
+    //	 	cout << val;
+    //	 }cout << endl;
+    //	 cout << "スケジュール" << endl;
+    //	 BOOST_FOREACH(vector<int> v, teacher.schedule) {
+    //	 	BOOST_FOREACH(int val, v) {
+    //	 		cout << val;
+    //	 	}
+    //	 }cout << endl;
+    //    // デバッグ用 convert_machine class
+    //     cout << "講習期間" << endl;
+    //     BOOST_FOREACH(string str1, convert_machine.piriod) {
+    //     	cout << str1;
+    //     }cout << endl;
+    return teacher;
 }
 
 STUDENT FILEIO::InputStudentData(string filename, vector<TEACHER> teachers) {
@@ -146,9 +146,7 @@ STUDENT FILEIO::InputStudentData(string filename, vector<TEACHER> teachers) {
                             nominate_teacher.push_back(teacher.id);
                         }
                     }
-//                    nominate_teacher.push_back(*teacher_token_iter);
                 }
-//                student.teacher_nomination.push_back(nominate_teacher);
                 student.nomination_teacher_id.push_back(nominate_teacher);
             } else if(state == IS_SCHEDULE) {
                 column++;
@@ -162,46 +160,96 @@ STUDENT FILEIO::InputStudentData(string filename, vector<TEACHER> teachers) {
             student.schedule.push_back(schedule_per_day);
             schedule_per_day.clear();
         }
-        LINE_SKIP: ;
+    LINE_SKIP: ;
     }
     // デバッグ用 student class
-//     cout << "生徒名" << endl;
-//     cout << student.name << student.grade << endl;
-//     cout << "科目" << endl;
-//     BOOST_FOREACH(int val, student.subject) {
-//     	cout << val;
-//     }cout << endl;
-//     cout << "担当講師" << endl;
-//     BOOST_FOREACH(vector<int> v, student.nomination_teacher_id) {
-//     	BOOST_FOREACH(int id, v){
-//     		cout << id;
-//     	}cout << endl;
-//     }
-//     cout << "スケジュール" << endl;
-//     BOOST_FOREACH(vector<int> v, student.schedule) {
-//     	BOOST_FOREACH(int val, v) {
-//     		cout << val;
-//     	}
-//     }cout << endl;
+    //     cout << "生徒名" << endl;
+    //     cout << student.name << student.grade << endl;
+    //     cout << "科目" << endl;
+    //     BOOST_FOREACH(int val, student.subject) {
+    //     	cout << val;
+    //     }cout << endl;
+    //     cout << "担当講師" << endl;
+    //     BOOST_FOREACH(vector<int> v, student.nomination_teacher_id) {
+    //     	BOOST_FOREACH(int id, v){
+    //     		cout << id;
+    //     	}cout << endl;
+    //     }
+    //     cout << "スケジュール" << endl;
+    //     BOOST_FOREACH(vector<int> v, student.schedule) {
+    //     	BOOST_FOREACH(int val, v) {
+    //     		cout << val;
+    //     	}
+    //     }cout << endl;
     return student;
 }
 
 
 void FILEIO::OutputString(ofstream& lp, string str) {
-//    ofstream lp("./lp/netz.lp");
     lp << format("%s") % str << endl;
 }
 
 void FILEIO::OutputVariable(ofstream& lp, string oper, int teacher, int student, int subject, int day, int coma) {
-//    ofstream lp("./lp/netz.lp");
     lp << format("%s x_%s_%s_%s_%s_%s ") %oper % teacher % student % subject % day % coma;
 }
 
 
-	
+void FILEIO::InputSOLfile(RepairVeiw& repair_veiw) {
+    ifstream ifs("./sol/netz.sol");
+    if(!ifs) {
+        cout << "Error:Input data file not found :: sol" << endl;
+        exit(1);
+    }
+    string line;
+    int state = FIRST_STATE;
+    while(getline(ifs, line)) {
+        typedef char_separator<char> CHAR_SEP;
+        typedef tokenizer<CHAR_SEP> TOKENIZER;
+        CHAR_SEP char_sep(" ", "", drop_empty_tokens);
+        TOKENIZER tokens(line, char_sep);
+        for(TOKENIZER::iterator token_iter = tokens.begin(); token_iter != tokens.end(); ++token_iter) {
+            if(state == FIRST_STATE && *token_iter == "------") {
+                state = WAIT;
+            } else if(state == WAIT && *token_iter == "------") {
+                state = READ_VARIABLE;
+                goto NEXT_LINE;
+            } else if(*token_iter == "Integer") {
+                state = FINISH;
+            }
+            if(state == READ_VARIABLE) {
+                string variable;
+                variable.assign(*token_iter);
+                if (variable[0] == 'x') {
+                    ++token_iter;++token_iter;
+                    if(*token_iter == "1") VariableAnalysis(repair_veiw, variable);
+                }
+            }
+        }
+        NEXT_LINE:;
+    }
+}
 
 
-
+void FILEIO::VariableAnalysis(RepairVeiw& repair_view,string variable) {
+    typedef char_separator<char> CHAR_SEP;
+    typedef tokenizer<CHAR_SEP> TOKENIZER;
+    CHAR_SEP char_sep("_", "", drop_empty_tokens);
+    TOKENIZER tokens(variable, char_sep);
+    vector<int> assign_inf;
+    for(TOKENIZER::iterator token_iter = tokens.begin(); token_iter != tokens.end(); ++token_iter) {
+        ++token_iter;
+        assign_inf.push_back(lexical_cast<int>(*token_iter));
+        ++token_iter;
+        assign_inf.push_back(lexical_cast<int>(*token_iter));
+        ++token_iter;
+        assign_inf.push_back(lexical_cast<int>(*token_iter));
+        ++token_iter;
+        assign_inf.push_back(lexical_cast<int>(*token_iter));
+        ++token_iter;
+        assign_inf.push_back(lexical_cast<int>(*token_iter));
+    }
+    repair_view.assign.push_back(assign_inf);
+}
 
 
 

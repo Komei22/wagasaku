@@ -4,14 +4,20 @@
 #include <fstream>
 #include <cstdlib>
 #include <dirent.h>
+#include <boost/foreach.hpp>
 #include "fileio.hpp"
 #include "convertMachine.hpp"
+#include "repairVeiw.hpp"
 
 using namespace std;
+
+using namespace boost;
 
 FILEIO fileio;
 
 ConvertMachine convert_machine;
+
+RepairVeiw repair_veiw;
 
 int main() {
     // teacherオブジェクト生成
@@ -68,6 +74,11 @@ int main() {
     // ソルバーで問題を解く
     system("./solver/glpsol --cpxlp ./lp/netz.lp -o ./sol/netz.sol");
     
+    // 解の読み込み
+    fileio.InputSOLfile(repair_veiw);
+    
+    //解の解析
+    repair_veiw.DecodeSchedule(students, teachers, convert_machine);
     
     
     return 0;

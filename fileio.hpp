@@ -6,12 +6,17 @@
 #include "student.hpp"
 #include "teacher.hpp"
 #include "convertMachine.hpp"
+#include "repairVeiw.hpp"
 
 typedef int INPUT_STATE;
 const INPUT_STATE FIRST_STATE = -1;
 const INPUT_STATE IS_NAME = 0;
 const INPUT_STATE IS_SUBJECT = 1;
 const INPUT_STATE IS_SCHEDULE = 2;
+
+const INPUT_STATE WAIT = 3;
+const INPUT_STATE READ_VARIABLE = 4;
+const INPUT_STATE FINISH = 5;
 
 class FILEIO {
 public:
@@ -27,8 +32,11 @@ public:
     // 制約式の出力
     void OutputVariable(ofstream &, string, int, int, int, int, int);
     
-    // 変数の読み込み
+    // 結果の変数の読み込み
+    void InputSOLfile(RepairVeiw &);
     
+    // 変数解析
+    void VariableAnalysis(RepairVeiw &, string);
 };
 
 

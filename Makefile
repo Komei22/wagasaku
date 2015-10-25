@@ -23,3 +23,4 @@ $(EXENAME): $(ALL_CXX_OBJ_FILES) $(ALL_C_OBJ_FILES)
 main.o: fileio.hpp convertMachine.hpp student.hpp teacher.hpp repairVeiw.hpp
 counvertMachine.o: fileio.hpp convertMachine.hpp student.hpp teacher.hpp repairVeiw.hpp
 fileio.o: fileio.hpp convertMachine.hpp student.hpp teacher.hpp repairVeiw.hpp
+repairVeiw.o: fileio.hpp convertMachine.hpp student.hpp teacher.hpp repairVeiw.hpp
