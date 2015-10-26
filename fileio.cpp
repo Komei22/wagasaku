@@ -233,28 +233,49 @@ void FILEIO::InputSOLfile(RepairVeiw& repair_veiw) {
         exit(1);
     }
     string line;
-    int state = FIRST_STATE;
+    int input_state = FIRST_STATE;
+    int read_state = WAIT_VARIABLE;
+    string variable;
     while(getline(ifs, line)) {
         typedef char_separator<char> CHAR_SEP;
         typedef tokenizer<CHAR_SEP> TOKENIZER;
         CHAR_SEP char_sep(" ", "", drop_empty_tokens);
         TOKENIZER tokens(line, char_sep);
         for(TOKENIZER::iterator token_iter = tokens.begin(); token_iter != tokens.end(); ++token_iter) {
-            if(state == FIRST_STATE && *token_iter == "------") {
-                state = WAIT;
-            } else if(state == WAIT && *token_iter == "------") {
-                state = READ_VARIABLE;
+            if(input_state == FIRST_STATE && *token_iter == "------") {
+                input_state = WAIT;
+            } else if(input_state == WAIT && *token_iter == "------") {
+                input_state = READ_VARIABLE;
                 goto NEXT_LINE;
             } else if(*token_iter == "Integer") {
-                state = FINISH;
+                input_state = FINISH;
             }
-            if(state == READ_VARIABLE) {
-                string variable;
-                variable.assign(*token_iter);
-                if (variable[0] == 'x') {
-                    ++token_iter;++token_iter;
-                    if(*token_iter == "1") VariableAnalysis(repair_veiw, variable);
+            if(input_state == READ_VARIABLE) {
+                if(read_state == WAIT_VARIABLE) {
+                    variable.assign(*token_iter);
+                    if (variable[0] == 'x') read_state = CHECKING;
+                } else if(read_state == CHECKING) {
+                    if(*token_iter == "*") { //*が来たら次に0か1が来る。1が来たら読み込みの状態に移行
+                        ++token_iter;
+                        cout << *token_iter << endl;
+                        cout << variable << endl;
+                        if(*token_iter == "1") {
+                            read_state = READING;
+                        } else {
+                            read_state = WAIT_VARIABLE;
+                        }
+                    }
+                } else if(read_state == READING) {
+                    cout << variable << endl;
+                    VariableAnalysis(repair_veiw, variable);
+                    read_state = WAIT_VARIABLE;
                 }
+                //                string variable;
+                //                variable.assign(*token_iter);
+                //                if (variable[0] == 'x') {
+                //                    ++token_iter;++token_iter;
+                //                    if(*token_iter == "1") VariableAnalysis(repair_veiw, variable);
+                //                }
             }
         }
     NEXT_LINE:;
@@ -282,6 +303,7 @@ void FILEIO::VariableAnalysis(RepairVeiw& repair_view,string variable) {
     }
     repair_view.assign.push_back(assign_inf);
 }
+
 
 
 
