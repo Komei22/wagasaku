@@ -48,6 +48,9 @@ int main() {
         students.push_back(fileio.InputStudentData(filename, teachers));
     }
     
+    // 入力ファイルのチェック
+    if(fileio.CheckInput(students, teachers) == 1) return 1;
+    
     // 出力用ファイル
     ofstream lp("./lp/netz.lp");
     fileio.OutputString(lp, "minimize");
@@ -76,16 +79,9 @@ int main() {
     
     // 解の読み込み
     fileio.InputSOLfile(repair_veiw);
-//    デバッグ用
-//    BOOST_FOREACH(vector<int> variable, repair_veiw.assign) {
-//        BOOST_FOREACH(int inf, variable) {
-//            cout << inf;
-//        }cout << endl;
-//    }
     
     //解の解析
     repair_veiw.DecodeSchedule(students, teachers, convert_machine);
-    
     
     return 0;
 }

@@ -17,12 +17,14 @@ void RepairVeiw::InitializeSubjectName() {
     subject_name.push_back("社会");
 }
 
+
 void RepairVeiw::InitializeSchedule(DECODE_SCHEDULE& schedule, int coma_num, int piriod_num) {
     schedule.resize(piriod_num);
     for (int idx = 0; idx < piriod_num; idx++) {
         schedule[idx].resize(coma_num);
     }
 }
+
 
 void RepairVeiw::OutputHead(ofstream& csv, string name, int coma_num) {
     csvout.OutputString(csv, name);
@@ -32,7 +34,6 @@ void RepairVeiw::OutputHead(ofstream& csv, string name, int coma_num) {
         csv << format("%s,") % (idx+1);
     }csv << endl;
 }
-
 
 
 void RepairVeiw::DecodeSchedule(STUDENTS students, TEACHERS teachers, ConvertMachine convert_machine) {

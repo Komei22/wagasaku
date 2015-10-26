@@ -163,26 +163,58 @@ STUDENT FILEIO::InputStudentData(string filename, vector<TEACHER> teachers) {
     LINE_SKIP: ;
     }
     // デバッグ用 student class
-    //     cout << "生徒名" << endl;
-    //     cout << student.name << student.grade << endl;
-    //     cout << "科目" << endl;
-    //     BOOST_FOREACH(int val, student.subject) {
-    //     	cout << val;
-    //     }cout << endl;
-    //     cout << "担当講師" << endl;
-    //     BOOST_FOREACH(vector<int> v, student.nomination_teacher_id) {
-    //     	BOOST_FOREACH(int id, v){
-    //     		cout << id;
-    //     	}cout << endl;
-    //     }
-    //     cout << "スケジュール" << endl;
-    //     BOOST_FOREACH(vector<int> v, student.schedule) {
-    //     	BOOST_FOREACH(int val, v) {
-    //     		cout << val;
-    //     	}
-    //     }cout << endl;
+    //         cout << "生徒名" << endl;
+    //         cout << student.name << student.grade << endl;
+    //         cout << "科目" << endl;
+    //         BOOST_FOREACH(int val, student.subject) {
+    //         	cout << val;
+    //         }cout << endl;
+    //         cout << "担当講師" << endl;
+    //         BOOST_FOREACH(vector<int> v, student.nomination_teacher_id) {
+    //         	BOOST_FOREACH(int id, v){
+    //         		cout << id;
+    //         	}cout << endl;
+    //         }
+    //         cout << "スケジュール" << endl;
+    //         BOOST_FOREACH(vector<int> v, student.schedule) {
+    //         	BOOST_FOREACH(int val, v) {
+    //         		cout << val;
+    //         	}
+    //         }cout << endl;
     return student;
 }
+
+
+void FILEIO::CreateSubjectList() {
+    subject_list.push_back("国語");
+    subject_list.push_back("数学");
+    subject_list.push_back("英語");
+    subject_list.push_back("理科");
+    subject_list.push_back("社会");
+}
+
+int FILEIO::CheckInput(STUDENTS students, TEACHERS teachers) {
+    CreateSubjectList();
+    // 生徒のとっている科目に対して指導する先生がいない
+    bool is_teaching_teacher = false;
+    int subject_num = teachers[0].teach_subject.size();
+    for (int subject = 0; subject < subject_num; subject++) {
+        BOOST_FOREACH(STUDENT student, students) {
+            BOOST_FOREACH(TEACHER teacher, teachers) {
+                if (student.subject[subject] == 0) is_teaching_teacher = true;
+                if (student.subject[subject] > 0 && teacher.teach_subject[subject] == 1) { //ある生徒のある科目に対して、教える講師がいるなら
+                    is_teaching_teacher = true;
+                }
+            }
+            if(is_teaching_teacher == false) {
+                cout << format("%sの%sを指導する講師がいません") % student.name % subject_list[subject] << endl;
+                return 1;
+            }
+        }
+    }
+    return 0;
+}
+
 
 
 void FILEIO::OutputString(ofstream& lp, string str) {
@@ -225,7 +257,7 @@ void FILEIO::InputSOLfile(RepairVeiw& repair_veiw) {
                 }
             }
         }
-        NEXT_LINE:;
+    NEXT_LINE:;
     }
 }
 

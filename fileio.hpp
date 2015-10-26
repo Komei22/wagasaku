@@ -3,6 +3,8 @@
 #ifndef __FILEIO_HPP
 #define __FILEIO_HPP
 
+#include <vector>
+
 #include "student.hpp"
 #include "teacher.hpp"
 #include "convertMachine.hpp"
@@ -18,13 +20,23 @@ const INPUT_STATE WAIT = 3;
 const INPUT_STATE READ_VARIABLE = 4;
 const INPUT_STATE FINISH = 5;
 
+typedef vector<string> SUBJECT_LIST;
+
 class FILEIO {
 public:
+    SUBJECT_LIST subject_list;
+    
     // 講師情報の読み込み
     TEACHER InputTeacherData(string, ConvertMachine &);
     
 	// 生徒情報の読み込み
 	STUDENT InputStudentData(string, vector<TEACHER>);
+    
+    // 教科名のリスト作成
+    void CreateSubjectList();
+    
+    // 入力のチェック 違反1 正常0
+    int CheckInput(STUDENTS, TEACHERS);
     
     // 文字列の出力 空白を渡すと改行
     void OutputString(ofstream &, string);
