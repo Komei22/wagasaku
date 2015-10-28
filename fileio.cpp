@@ -13,7 +13,7 @@ using namespace std;
 using namespace boost;
 
 TEACHER FILEIO::InputTeacherData(string filename, ConvertMachine& convert_machine) {
-    const string inFile = "./teacher/"+filename;
+    const string inFile = "./data/teacher/"+filename;
     ifstream ifs(inFile.c_str());
     if(!ifs) {
         cout << "Error:Input data file not found" << endl;
@@ -69,7 +69,7 @@ TEACHER FILEIO::InputTeacherData(string filename, ConvertMachine& convert_machin
     LINE_SKIP: ;
     }
     
-    // 	// デバッグ用
+    // デバッグ用
     //	 cout << "講師名" << endl;
     //	 cout << teacher.name << endl;
     //	 cout << "指導科目" << endl;
@@ -91,7 +91,7 @@ TEACHER FILEIO::InputTeacherData(string filename, ConvertMachine& convert_machin
 }
 
 STUDENT FILEIO::InputStudentData(string filename, vector<TEACHER> teachers) {
-    ifstream ifs("./student/"+filename);
+    ifstream ifs("./data/student/"+filename);
     if(!ifs) {
         cout << "Error:Input data file not found" << endl;
         exit(1);
@@ -221,6 +221,7 @@ void FILEIO::OutputString(ofstream& lp, string str) {
     lp << format("%s") % str << endl;
 }
 
+
 void FILEIO::OutputVariable(ofstream& lp, string oper, int teacher, int student, int subject, int day, int coma) {
     lp << format("%s x_%s_%s_%s_%s_%s ") %oper % teacher % student % subject % day % coma;
 }
@@ -257,8 +258,6 @@ void FILEIO::InputSOLfile(RepairVeiw& repair_veiw) {
                 } else if(read_state == CHECKING) {
                     if(*token_iter == "*") { //*が来たら次に0か1が来る。1が来たら読み込みの状態に移行
                         ++token_iter;
-                        cout << *token_iter << endl;
-                        cout << variable << endl;
                         if(*token_iter == "1") {
                             read_state = READING;
                         } else {
@@ -266,16 +265,9 @@ void FILEIO::InputSOLfile(RepairVeiw& repair_veiw) {
                         }
                     }
                 } else if(read_state == READING) {
-                    cout << variable << endl;
                     VariableAnalysis(repair_veiw, variable);
                     read_state = WAIT_VARIABLE;
                 }
-                //                string variable;
-                //                variable.assign(*token_iter);
-                //                if (variable[0] == 'x') {
-                //                    ++token_iter;++token_iter;
-                //                    if(*token_iter == "1") VariableAnalysis(repair_veiw, variable);
-                //                }
             }
         }
     NEXT_LINE:;
@@ -303,10 +295,5 @@ void FILEIO::VariableAnalysis(RepairVeiw& repair_view,string variable) {
     }
     repair_view.assign.push_back(assign_inf);
 }
-
-
-
-
-
 
 

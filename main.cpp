@@ -23,7 +23,7 @@ int main() {
     // teacherオブジェクト生成
     vector<TEACHER> teachers;
     // 講師情報の読み込み
-    const char* path_teacher = "./teacher";
+    const char* path_teacher = "./data/teacher";
     DIR *dp;       // ディレクトリへのポインタ
     dirent* entry; // readdir() で返されるエントリーポイント
     dp = opendir(path_teacher);
@@ -38,7 +38,7 @@ int main() {
     // studentオブジェクトを生成
     vector<STUDENT> students;
     // 生徒情報の読み込み
-    const char* path_student = "./student";
+    const char* path_student = "./data/student";
     dp = opendir(path_student);
     if (dp == NULL) return 1;
     while ((entry = readdir(dp)) != NULL) {

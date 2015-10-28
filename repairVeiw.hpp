@@ -45,8 +45,6 @@ public:
     void DecodeStudentSchedule(ofstream &, DECODE_SCHEDULE &, TEACHER, STUDENT, int, int);
     // 講師のスケジュールの復元
     void DecodeTeacherSchedule(ofstream &, DECODE_SCHEDULE &, TEACHER, STUDENT, int, int);
-    
-    
 };
 
 

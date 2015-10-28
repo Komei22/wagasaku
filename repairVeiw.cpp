@@ -90,7 +90,6 @@ void RepairVeiw::DecodeSchedule(STUDENTS students, TEACHERS teachers, ConvertMac
         schedule.clear();
         csv.close();
     }
-    
 }
 
 
