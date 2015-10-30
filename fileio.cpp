@@ -25,12 +25,11 @@ TEACHER FILEIO::InputTeacherData(string filename, ConvertMachine& convert_machin
     vector<int> schedule_per_day;
     INPUT_STATE state = FIRST_STATE;
     while(getline(ifs, line)) {
-        line = line+',';
+//        line = line+',';
         int column = 0;
         typedef tokenizer<escaped_list_separator<char> > ESC_TOKENIZER;
         ESC_TOKENIZER tokens(line);
         for(ESC_TOKENIZER::iterator token_iter = tokens.begin(); token_iter != tokens.end(); ++token_iter) {
-            if(*token_iter == "") continue;
             if(*token_iter == "講師名") {
                 state = IS_NAME;
                 break;
@@ -44,11 +43,13 @@ TEACHER FILEIO::InputTeacherData(string filename, ConvertMachine& convert_machin
             
             switch (state) {
                 case IS_NAME:
+                    if(*token_iter == "") continue;
                     teacher.name = *token_iter;
                     ++token_iter;
                     teacher.id = lexical_cast<int>(*token_iter);
                     break;
                 case IS_SUBJECT:
+                    if(*token_iter == "") continue;
                     ++token_iter;
                     teacher.teach_subject.push_back(lexical_cast<int>(*token_iter));
                     break;
@@ -56,7 +57,13 @@ TEACHER FILEIO::InputTeacherData(string filename, ConvertMachine& convert_machin
                     column++;
                     if(*token_iter == "コマ") goto LINE_SKIP;
                     if(teacher.id == 0 && column == 1) convert_machine.piriod.push_back(*token_iter);
-                    if(column > 1) schedule_per_day.push_back(lexical_cast<int>(*token_iter));
+                    if(column > 1) {
+                        if (*token_iter == "") {
+                            schedule_per_day.push_back(0);
+                        } else {
+                            schedule_per_day.push_back(1);
+                        }
+                    }
                     break;
                 default:
                     break;
@@ -70,23 +77,23 @@ TEACHER FILEIO::InputTeacherData(string filename, ConvertMachine& convert_machin
     }
     
     // デバッグ用
-    //	 cout << "講師名" << endl;
-    //	 cout << teacher.name << endl;
-    //	 cout << "指導科目" << endl;
-    //	 BOOST_FOREACH(int val, teacher.teach_subject) {
-    //	 	cout << val;
-    //	 }cout << endl;
-    //	 cout << "スケジュール" << endl;
-    //	 BOOST_FOREACH(vector<int> v, teacher.schedule) {
-    //	 	BOOST_FOREACH(int val, v) {
-    //	 		cout << val;
-    //	 	}
-    //	 }cout << endl;
-    //    // デバッグ用 convert_machine class
-    //     cout << "講習期間" << endl;
-    //     BOOST_FOREACH(string str1, convert_machine.piriod) {
-    //     	cout << str1;
-    //     }cout << endl;
+//    	 cout << "講師名" << endl;
+//    	 cout << teacher.name << endl;
+//    	 cout << "指導科目" << endl;
+//    	 BOOST_FOREACH(int val, teacher.teach_subject) {
+//    	 	cout << val;
+//    	 }cout << endl;
+//    	 cout << "スケジュール" << endl;
+//    	 BOOST_FOREACH(vector<int> v, teacher.schedule) {
+//    	 	BOOST_FOREACH(int val, v) {
+//    	 		cout << val;
+//    	 	}
+//    	 }cout << endl;
+//        // デバッグ用 convert_machine class
+//         cout << "講習期間" << endl;
+//         BOOST_FOREACH(string str1, convert_machine.piriod) {
+//         	cout << str1;
+//         }cout << endl;
     return teacher;
 }
 
@@ -102,12 +109,10 @@ STUDENT FILEIO::InputStudentData(string filename, vector<TEACHER> teachers) {
     vector<int> schedule_per_day;
     INPUT_STATE state = FIRST_STATE;
     while(getline(ifs, line)) {
-        line = line+',';
         int column = 0;
         typedef tokenizer<escaped_list_separator<char> > ESC_TOKENIZER;
         ESC_TOKENIZER tokens(line);
         for(ESC_TOKENIZER::iterator token_iter = tokens.begin(); token_iter != tokens.end(); ++token_iter) {
-            if(*token_iter == "") continue;
             if(*token_iter == "生徒名") {
                 state = IS_NAME;
                 break;
@@ -120,6 +125,7 @@ STUDENT FILEIO::InputStudentData(string filename, vector<TEACHER> teachers) {
             }
             
             if(state == IS_NAME) {
+                if(*token_iter == "") continue;
                 student.name = *token_iter;
                 ++token_iter;
                 if(*token_iter == "高校生") {
@@ -131,6 +137,7 @@ STUDENT FILEIO::InputStudentData(string filename, vector<TEACHER> teachers) {
                 student.id = lexical_cast<int>(*token_iter);
                 break;
             } else if(state == IS_SUBJECT) {
+                if(*token_iter == "") continue;
                 ++token_iter;
                 student.subject.push_back(lexical_cast<int>(*token_iter));
                 ++token_iter;
@@ -152,7 +159,11 @@ STUDENT FILEIO::InputStudentData(string filename, vector<TEACHER> teachers) {
                 column++;
                 if(*token_iter == "コマ") goto LINE_SKIP;
                 if(column > 1) {
-                    schedule_per_day.push_back(lexical_cast<int>(*token_iter));
+                    if (*token_iter == "") {
+                        schedule_per_day.push_back(0);
+                    } else {
+                        schedule_per_day.push_back(1);
+                    }
                 }
             }
         }
@@ -163,24 +174,24 @@ STUDENT FILEIO::InputStudentData(string filename, vector<TEACHER> teachers) {
     LINE_SKIP: ;
     }
     // デバッグ用 student class
-    //         cout << "生徒名" << endl;
-    //         cout << student.name << student.grade << endl;
-    //         cout << "科目" << endl;
-    //         BOOST_FOREACH(int val, student.subject) {
-    //         	cout << val;
-    //         }cout << endl;
-    //         cout << "担当講師" << endl;
-    //         BOOST_FOREACH(vector<int> v, student.nomination_teacher_id) {
-    //         	BOOST_FOREACH(int id, v){
-    //         		cout << id;
-    //         	}cout << endl;
-    //         }
-    //         cout << "スケジュール" << endl;
-    //         BOOST_FOREACH(vector<int> v, student.schedule) {
-    //         	BOOST_FOREACH(int val, v) {
-    //         		cout << val;
-    //         	}
-    //         }cout << endl;
+//             cout << "生徒名" << endl;
+//             cout << student.name << student.grade << endl;
+//             cout << "科目" << endl;
+//             BOOST_FOREACH(int val, student.subject) {
+//             	cout << val;
+//             }cout << endl;
+//             cout << "担当講師" << endl;
+//             BOOST_FOREACH(vector<int> v, student.nomination_teacher_id) {
+//             	BOOST_FOREACH(int id, v){
+//             		cout << id;
+//             	}cout << endl;
+//             }
+//             cout << "スケジュール" << endl;
+//             BOOST_FOREACH(vector<int> v, student.schedule) {
+//             	BOOST_FOREACH(int val, v) {
+//             		cout << val;
+//             	}
+//             }cout << endl;
     return student;
 }
 
