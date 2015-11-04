@@ -51,6 +51,10 @@ int main() {
     // 入力ファイルのチェック
     if(fileio.CheckInput(students, teachers) == 1) return 1;
     
+    // 入力ファイルの分割
+    convert_machine.DevideDay();
+    
+    
     // 出力用ファイル
     ofstream lp("./lp/netz.lp");
     fileio.OutputString(lp, "minimize");
@@ -75,13 +79,13 @@ int main() {
     fileio.OutputString(lp, "\nend");
     
     // ソルバーで問題を解く
-    system("./solver/glpsol --cpxlp ./lp/netz.lp -o ./sol/netz.sol");
+//    system("./solver/glpsol --cpxlp ./lp/netz.lp -o ./sol/netz.sol");
     
-    // 解の読み込み
-    fileio.InputSOLfile(repair_veiw);
-    
-    //解の解析
-    repair_veiw.DecodeSchedule(students, teachers, convert_machine);
+//    // 解の読み込み
+//    fileio.InputSOLfile(repair_veiw);
+//    
+//    //解の解析
+//    repair_veiw.DecodeSchedule(students, teachers, convert_machine);
     
     return 0;
 }

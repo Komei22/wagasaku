@@ -15,10 +15,19 @@ typedef vector<STUDENT> STUDENTS;
 
 typedef vector<TEACHER> TEACHERS;
 
+typedef vector<string> DEVIDE_PIRIOD;
+
+
 class ConvertMachine {
 public:
 	//講習期間
 	vector<string> piriod;
+    
+    vector<DEVIDE_PIRIOD> devide_piriod_list;
+    
+    
+    //講習期間,期間中の教科の数の分割 返り値:講習何日
+    void DevideDay();
     
     // 先生たちの指導回数の平均化目的関数
     void GenerateTeachAverageingFunction(ofstream&);

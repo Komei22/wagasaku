@@ -1,4 +1,5 @@
 // convertMachine.cpp
+#include <math.h>
 #include <boost/lexical_cast.hpp>
 #include <boost/foreach.hpp>
 #include <boost/format.hpp>
@@ -9,6 +10,63 @@ using namespace std;
 using namespace boost;
 
 FILEIO fileout;
+
+#define DEVIDE_SIZE 7
+
+void ConvertMachine::DevideDay() {
+    // 一週間ごとに期間を分割
+    int devide_day_start = 0;
+    int training_priod = piriod.size();
+    DEVIDE_PIRIOD devide_piriod;
+    vector<DEVIDE_PIRIOD> devide_piriod_list_tmp;
+    while (devide_day_start <= training_priod) {
+        for (int day = devide_day_start; day < devide_day_start + DEVIDE_SIZE; day++) {
+            devide_piriod.push_back(piriod[day]);
+            if (day == training_priod) break;
+        }
+        devide_piriod_list_tmp.push_back(devide_piriod);
+        devide_piriod.clear();
+        devide_day_start = devide_day_start + DEVIDE_SIZE;
+    }
+    
+    // 最後分割部分が4日より小さかった場合、最後一つ前のリストの平均化
+    int devided_list_size = devide_piriod_list_tmp.size();
+    devide_piriod_list.resize(devided_list_size);
+    if (devide_piriod_list_tmp.back().size() < DEVIDE_SIZE-2) {
+        int back_list_mean = ceil((devide_piriod_list_tmp.back().size() + devide_piriod_list_tmp[devided_list_size-2].size())/2);
+        for (int idx = 0; idx < devided_list_size; idx++) {
+            if (idx == devided_list_size-2) {
+                int push_num = 0;
+                for (int day_idx = (idx)*DEVIDE_SIZE; day_idx < training_priod; day_idx++) {
+                    if (push_num <= back_list_mean) {
+                        devide_piriod_list[idx].push_back(piriod[day_idx]);
+                    } else {
+                        devide_piriod_list[idx+1].push_back(piriod[day_idx]);
+                    }
+                    push_num++;
+                }
+                break;
+            } else {
+                devide_piriod_list[idx] = devide_piriod_list_tmp[idx];
+            }
+        }
+    } else {
+        for (int idx = 0; idx < devided_list_size; idx++) {
+            devide_piriod_list[idx] = devide_piriod_list_tmp[idx];
+        }
+    }
+
+//    BOOST_FOREACH(DEVIDE_PIRIOD dp, devide_piriod_list) {
+////        cout << dp.size() << endl;
+//        BOOST_FOREACH(string str, dp) {
+//            cout << str << endl;
+//        }
+//    }
+
+}
+
+
+
 
 void ConvertMachine::GenerateTeachAverageingFunction(ofstream& lp) {
     fileout.OutputString(lp, "y_M - y_m");
