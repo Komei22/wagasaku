@@ -54,29 +54,31 @@ int main() {
     // 入力ファイルの分割
     convert_machine.DevideDay();
     
+    convert_machine.DevideSubject(students, teachers);
     
-    // 出力用ファイル
-    ofstream lp("./lp/netz.lp");
-    fileio.OutputString(lp, "minimize");
-    // 先生たちの指導回数の平均化（目的関数）
-    convert_machine.GenerateTeachAverageingFunction(lp);
-    fileio.OutputString(lp, "\nsubject to");
-    // 先生の生徒に対する割り当て可能性
-    convert_machine.GenerateTeacherAssignFomula(lp, students, teachers);
-    // 生徒の先生に対する割り当て可能性
-    convert_machine.GenerateStudentAssignFomula(lp, students, teachers);
-    // 生徒のコマ数の制限
-    convert_machine.GenerateComaFomula(lp, students, teachers);
-    // 高校生に対するコマの制限
-    convert_machine.GenerateHSFomula(lp, students, teachers);
-    // 先生の指導回数の平均化（制約）
-    convert_machine.GenerateTeachAverageingFomula(lp, students, teachers);
-    // 01変数であることを宣言
-    fileio.OutputString(lp, "\nbinary");
-    convert_machine.GenerateBinaryVariable(lp, students, teachers);
-    fileio.OutputString(lp, "\ngeneral");
-    fileio.OutputString(lp, "y_M y_m");
-    fileio.OutputString(lp, "\nend");
+    
+//    // 出力用ファイル
+//    ofstream lp("./lp/netz.lp");
+//    fileio.OutputString(lp, "minimize");
+//    // 先生たちの指導回数の平均化（目的関数）
+//    convert_machine.GenerateTeachAverageingFunction(lp);
+//    fileio.OutputString(lp, "\nsubject to");
+//    // 先生の生徒に対する割り当て可能性
+//    convert_machine.GenerateTeacherAssignFomula(lp, students, teachers);
+//    // 生徒の先生に対する割り当て可能性
+//    convert_machine.GenerateStudentAssignFomula(lp, students, teachers);
+//    // 生徒のコマ数の制限
+//    convert_machine.GenerateComaFomula(lp, students, teachers);
+//    // 高校生に対するコマの制限
+//    convert_machine.GenerateHSFomula(lp, students, teachers);
+//    // 先生の指導回数の平均化（制約）
+//    convert_machine.GenerateTeachAverageingFomula(lp, students, teachers);
+//    // 01変数であることを宣言
+//    fileio.OutputString(lp, "\nbinary");
+//    convert_machine.GenerateBinaryVariable(lp, students, teachers);
+//    fileio.OutputString(lp, "\ngeneral");
+//    fileio.OutputString(lp, "y_M y_m");
+//    fileio.OutputString(lp, "\nend");
     
     // ソルバーで問題を解く
 //    system("./solver/glpsol --cpxlp ./lp/netz.lp -o ./sol/netz.sol");

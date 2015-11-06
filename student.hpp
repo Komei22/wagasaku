@@ -33,12 +33,12 @@ typedef vector<int> SUBJECT_CLASS_NUM;
 typedef vector< vector<int> > SCHEDULE;
 
 // 科目ごとの指定講師 vector[教科][教師名]
-typedef vector< vector<string> > TEACHER_NOMINATION;
+//typedef vector< vector<string> > TEACHER_NOMINATION;
 
 // 科目ごとの講師指定
 typedef vector< vector<int> > NOMINATION_TEACHER_ID;
 
-class STUDENT {
+class STUDENT {    
 public:
 	STUDENT_NAME name;
 
@@ -47,10 +47,13 @@ public:
 	GRADE grade;
 
 	SUBJECT_CLASS_NUM subject;
+    
+    // 生徒のphase毎の指導科目別コマ数
+    vector<SUBJECT_CLASS_NUM> devide_coma_num_of_subject;
 
 	SCHEDULE schedule;
 
-	TEACHER_NOMINATION teacher_nomination;
+//	TEACHER_NOMINATION teacher_nomination;
 
 	NOMINATION_TEACHER_ID nomination_teacher_id;
 

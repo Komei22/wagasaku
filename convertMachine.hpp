@@ -17,17 +17,25 @@ typedef vector<TEACHER> TEACHERS;
 
 typedef vector<string> DEVIDE_PIRIOD;
 
-
 class ConvertMachine {
 public:
-	//講習期間
+	// 講習期間
 	vector<string> piriod;
     
+    // 分割した講習期間のリスト
     vector<DEVIDE_PIRIOD> devide_piriod_list;
     
-    
-    //講習期間,期間中の教科の数の分割 返り値:講習何日
+    // 講習期間の分割
     void DevideDay();
+    
+    // 分割期間中の科目のコマ数に分割
+    void DevideSubject(STUDENTS, TEACHERS);
+    
+    // コマをphase毎に分配する
+    void DistributeComaForFhase(STUDENT, TEACHERS, vector<int>);
+    
+    // 分割期間に閾値数分のコマを割り当て、空きコマが足りない場合できるだけ割り当てる
+    void AssignComaInFhase(STUDENT&, TEACHERS, int, int, vector<int>&, vector<int>);
     
     // 先生たちの指導回数の平均化目的関数
     void GenerateTeachAverageingFunction(ofstream&);
