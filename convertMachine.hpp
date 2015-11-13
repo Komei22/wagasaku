@@ -35,11 +35,16 @@ public:
     void CountTeacherEmptySchedule(TEACHERS&);
     
     // コマをphase毎に分配する
-    void DistributeComaForFhase(STUDENT&, TEACHERS&, vector<int>);
+    void DistributeComaForFhase(STUDENT&, TEACHERS&);
     
+    // 各教科毎の1phaseのコマ数の閾値を計算
+    void CalculateComaThreSubject(vector<int>&, STUDENT, int);
+    
+    // phaseでの平均指導科目数
+    int CalcurateComaThreAll(STUDENT, int);
     
     // 分割期間に閾値数分のコマを割り当て、空きコマが足りない場合できるだけ割り当てる
-    void AssignComaInFhase(STUDENT&, TEACHERS&, int, int, vector<int>&, vector<int>);
+    void AssignComaInFhase(STUDENT&, TEACHERS&, int, int, vector<int>&, vector<int>, int);
     
     // 先生たちの指導回数の平均化目的関数
     void GenerateTeachAverageingFunction(ofstream&);
