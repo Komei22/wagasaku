@@ -5,7 +5,6 @@
 
 #include <iostream>
 #include <vector>
-#include <map>
 #include <string>
 
 using namespace std;
@@ -19,6 +18,9 @@ typedef vector<int> TEACH_SUBJECT;
 // スケジュール
 typedef vector< vector<int> > SCHEDULE;
 
+// phaseごとの空きコマ数
+typedef vector<int> EMPTY_SCHEDULE_OF_PHASE;
+
 class TEACHER {
 public:
 	TEACHER_NAME name;
@@ -28,6 +30,8 @@ public:
 	TEACH_SUBJECT teach_subject;
 
 	SCHEDULE schedule;
+    
+    EMPTY_SCHEDULE_OF_PHASE empty_of_phase;
 
 };
 

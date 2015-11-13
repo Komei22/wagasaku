@@ -29,13 +29,17 @@ public:
     void DevideDay();
     
     // 分割期間中の科目のコマ数に分割
-    void DevideSubject(STUDENTS, TEACHERS);
+    void DevideSubject(STUDENTS&, TEACHERS&);
+    
+    // 講師のphaseごとの空きコマ数をカウント
+    void CountTeacherEmptySchedule(TEACHERS&);
     
     // コマをphase毎に分配する
-    void DistributeComaForFhase(STUDENT, TEACHERS, vector<int>);
+    void DistributeComaForFhase(STUDENT&, TEACHERS&, vector<int>);
+    
     
     // 分割期間に閾値数分のコマを割り当て、空きコマが足りない場合できるだけ割り当てる
-    void AssignComaInFhase(STUDENT&, TEACHERS, int, int, vector<int>&, vector<int>);
+    void AssignComaInFhase(STUDENT&, TEACHERS&, int, int, vector<int>&, vector<int>);
     
     // 先生たちの指導回数の平均化目的関数
     void GenerateTeachAverageingFunction(ofstream&);
