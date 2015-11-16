@@ -49,7 +49,7 @@ public:
 	SUBJECT_CLASS_NUM subject;
     
     // 生徒のphase毎の指導科目別コマ数
-    vector<SUBJECT_CLASS_NUM> devide_coma_num_of_subject;
+    vector<SUBJECT_CLASS_NUM> coma_of_subject_phase;
 
 	SCHEDULE schedule;
 

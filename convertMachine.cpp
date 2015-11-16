@@ -1,6 +1,5 @@
 // convertMachine.cpp
 #include <math.h>
-#include <queue>
 #include <boost/lexical_cast.hpp>
 #include <boost/foreach.hpp>
 #include <boost/format.hpp>
@@ -44,7 +43,6 @@ void ConvertMachine::DevideDay() {
 void ConvertMachine::DevideSubject(STUDENTS& students, TEACHERS& teachers) {
     // 講師のphaseごとの空きコマ数
     CountTeacherEmptySchedule(teachers);
-    
     BOOST_FOREACH(STUDENT& student, students) {
         DistributeComaForFhase(student, teachers);
     }
@@ -90,28 +88,32 @@ void ConvertMachine::DistributeComaForFhase(STUDENT& student, TEACHERS& teachers
     int coma_thre_of_all = CalcurateComaThreAll(student, phase_num);
     
     // 生徒のphaseごとの科目のコマ数の初期化
-    student.devide_coma_num_of_subject.resize(phase_num);
+    student.coma_of_subject_phase.resize(phase_num);
     for (int phase = 0; phase < phase_num; phase++) {
-        student.devide_coma_num_of_subject[phase].assign(subject_num, 0);
+        student.coma_of_subject_phase[phase].assign(subject_num, 0);
     }
     
-    int phase_start_idx = 0;
     vector<int> coma_num_of_subject;
     copy(student.subject.begin(), student.subject.end(), back_inserter(coma_num_of_subject));
+    int phase_start_idx = 0;
+    EMPTY_RATE empty_rate;
     // あるphaseに割り当てができるかをチェックして割り当て可能なら割り当てていく、空きコマが足りない場合は出来るだけ割り当てておく
     for (int phase = 0; phase < phase_num; phase++) {
-        AssignComaInFhase(student, teachers, phase_start_idx, phase, coma_num_of_subject, coma_thre_of_subject, coma_thre_of_all);
+        int empty_num = AssignComaInFhase(student, teachers, phase_start_idx, phase, coma_num_of_subject, coma_thre_of_subject, coma_thre_of_all);
+        empty_rate.push_back(make_pair(empty_num, phase));
         phase_start_idx += devide_piriod_list[phase].size();
     }
     
     // 割り当てなければならないコマが残っていたとき、余ってる分を余裕のあるphaseに割り当てる
-    
-    
-    
+    bool is_rest = false;
+    for (int subject_idx = 0; subject_idx < subject_num; subject_idx++) {
+        if(coma_num_of_subject[subject_idx] > 0) is_rest = true;
+    }
+    if (is_rest) AssignRemainingComa(student, teachers, empty_rate, coma_num_of_subject, coma_thre_of_all);
     
     //    デバッグ用　phaseごとの各科目のコマ数
     cout << student.name << endl;
-    BOOST_FOREACH(vector<int> subject, student.devide_coma_num_of_subject) {
+    BOOST_FOREACH(vector<int> subject, student.coma_of_subject_phase) {
         BOOST_FOREACH(int coma, subject) {
             cout << coma;
         }cout << endl;
@@ -134,19 +136,19 @@ void ConvertMachine::CalculateComaThreSubject(vector<int>& coma_thre_of_subject,
     }
 }
 
+
 int ConvertMachine::CalcurateComaThreAll(STUDENT student, int phase_num) {
     double coma_thre_of_all = 0;
     for (int subject_idx = 0; subject_idx < student.subject.size(); subject_idx++) {
         coma_thre_of_all += student.subject[subject_idx];
     }
-    
-    coma_thre_of_all = ceil(coma_thre_of_all/(double)phase_num);
-    
+    coma_thre_of_all = floor(coma_thre_of_all/(double)phase_num);
+    if(coma_thre_of_all == 0) coma_thre_of_all++;
     return coma_thre_of_all;
 }
 
 
-void ConvertMachine::AssignComaInFhase(STUDENT& student, TEACHERS& teachers, int phase_start_idx, int phase, vector<int> &coma_num_of_subject, vector<int> coma_thre_of_subject, int coma_thre_of_all) {
+int ConvertMachine::AssignComaInFhase(STUDENT& student, TEACHERS& teachers, int phase_start_idx, int phase, vector<int> &coma_num_of_subject, vector<int> coma_thre_of_subject, int coma_thre_of_all) {
     int subject_num = student.subject.size();
     int coma_num = student.schedule[0].size();
     // 生徒の最初に探索される教科
@@ -179,10 +181,9 @@ void ConvertMachine::AssignComaInFhase(STUDENT& student, TEACHERS& teachers, int
                             for (int coma_idx = 0; coma_idx < coma_num; coma_idx++) {
                                 if (student.schedule[day_idx][coma_idx] ==1 && teacher.schedule[day_idx][coma_idx] == 1) {
                                     if(subject_idx == first_search_subject) empty_shcedule_num++;
-                                    if (teacher.empty_of_phase[phase] == 0) break;
-                                    if (total_assign_num == coma_thre_of_all) break;
-                                    if (student.devide_coma_num_of_subject[phase][subject_idx] < coma_thre_of_subject[subject_idx]) {
-                                        student.devide_coma_num_of_subject[phase][subject_idx]++;
+                                    if (teacher.empty_of_phase[phase] == 0 || total_assign_num == coma_thre_of_all) break;
+                                    if (student.coma_of_subject_phase[phase][subject_idx] < coma_thre_of_subject[subject_idx]) {
+                                        student.coma_of_subject_phase[phase][subject_idx]++;
                                         total_assign_num++;
                                         empty_shcedule_num--;
                                         teacher.empty_of_phase[phase]--;
@@ -200,10 +201,9 @@ void ConvertMachine::AssignComaInFhase(STUDENT& student, TEACHERS& teachers, int
                     for (int coma_idx = 0; coma_idx < coma_num; coma_idx++) {
                         if (student.schedule[day_idx][coma_idx] ==1 && teacher.schedule[day_idx][coma_idx] == 1) {
                             if(subject_idx == first_search_subject) empty_shcedule_num++;
-                            if (teacher.empty_of_phase[phase] == 0) break;
-                            if (total_assign_num == coma_thre_of_all) break;
-                            if (student.devide_coma_num_of_subject[phase][subject_idx] < coma_thre_of_subject[subject_idx]) {
-                                student.devide_coma_num_of_subject[phase][subject_idx]++;
+                            if (teacher.empty_of_phase[phase] == 0 || total_assign_num == coma_thre_of_all) break;
+                            if (student.coma_of_subject_phase[phase][subject_idx] < coma_thre_of_subject[subject_idx]) {
+                                student.coma_of_subject_phase[phase][subject_idx]++;
                                 total_assign_num++;
                                 empty_shcedule_num--;
                                 teacher.empty_of_phase[phase]--;
@@ -211,14 +211,161 @@ void ConvertMachine::AssignComaInFhase(STUDENT& student, TEACHERS& teachers, int
                             } else {
                                 break;
                             }
-                            
-                            
                         }
                     }
                 }
             }
         }
     }
+    return empty_shcedule_num;
+}
+
+
+void ConvertMachine::AssignRemainingComa(STUDENT& student, TEACHERS& teachers, EMPTY_RATE& empty_rate, vector<int> coma_num_of_subject, int coma_thre_of_all) {
+    // phaseの指導可能コマの空き具合(empty_rate)からphaseの優先度を決定
+    PHASE_PRIORITY phase_priority;
+//    UpdatePhaseEmptyRate(phase_priority, empty_rate);
+    
+    // 科目の優先度の設定
+    int subject_num = coma_num_of_subject.size();
+    SUBJECT_PRIORITY subject_priority;
+    UpdateSubjectPriority(subject_priority, coma_num_of_subject, subject_num);
+    
+    // 各phase合計のコマ数を保管
+    int phase_num = devide_piriod_list.size();
+    vector<int> total_coma_num_phase;
+    for (int phase_idx = 0; phase_idx < phase_num; phase_idx++) {
+        int total_coma = 0;
+        for (int subject_idx = 0; subject_idx < subject_num; subject_idx++) {
+            total_coma += student.coma_of_subject_phase[phase_idx][subject_idx];
+        }
+        total_coma_num_phase.push_back(total_coma);
+    }
+    
+    
+    // デバッグ用
+//        cout << student.name << endl;
+//        BOOST_FOREACH(vector<int> subject, student.coma_of_subject_phase) {
+//            BOOST_FOREACH(int coma, subject) {
+//                cout << coma;
+//            }cout << endl;
+//        }
+//    
+//    cout << "rest" << endl;
+//    BOOST_FOREACH(int num, coma_num_of_subject) {
+//        cout << num;
+//    }cout << endl;
+    
+    // 余りのコマを割り当てる
+    int coma_num = student.schedule[0].size();
+    while (!CheckRemainigComa(coma_num_of_subject)) {
+        // 各phaseの平均の割り当て可能コマ数を1引き上げる
+        coma_thre_of_all++;
+        UpdatePhaseEmptyRate(phase_priority, empty_rate);
+        while (!phase_priority.empty()) {
+            int phase = phase_priority.top().second;
+            phase_priority.pop();
+            //        cout << "phase:" << phase << endl;
+            while (!subject_priority.empty()) {
+                int subject_idx = subject_priority.top().second;
+                subject_priority.pop();
+                //            cout << "subject:" << subject_idx << endl;
+                int whole_day_idx = PhaseToWholeDayIndex(phase);
+                for (int coma_idx = 0; coma_idx < coma_num; coma_idx++) {
+                    if (!student.nomination_teacher_id[subject_idx].empty()) {
+                        BOOST_FOREACH(int nominate_teacher_id, student.nomination_teacher_id[subject_idx]) {
+                            BOOST_FOREACH(TEACHER teacher, teachers) {
+                                if (teacher.id == nominate_teacher_id) {
+                                    if (student.schedule[whole_day_idx][coma_idx] == 1 && teacher.schedule[whole_day_idx][coma_idx] == 1) {
+                                        if (total_coma_num_phase[phase] >= coma_thre_of_all || teacher.empty_of_phase[phase] == 0) break;
+                                        if (coma_num_of_subject[subject_idx] == 0) break;
+                                        student.coma_of_subject_phase[phase][subject_idx]++;
+                                        coma_num_of_subject[subject_idx]--;
+                                        teacher.empty_of_phase[phase]--;
+                                        empty_rate[phase].first--;
+                                        total_coma_num_phase[phase]++;
+                                    }
+                                }
+                            }
+                        }
+                    } else {
+                        BOOST_FOREACH(TEACHER teacher, teachers) {
+                            if (student.schedule[whole_day_idx][coma_idx] == 1 && teacher.schedule[whole_day_idx][coma_idx] == 1) {
+                                if (total_coma_num_phase[phase] >= coma_thre_of_all || teacher.empty_of_phase[phase] == 0) break;
+                                if (coma_num_of_subject[subject_idx] == 0) break;
+                                student.coma_of_subject_phase[phase][subject_idx]++;
+                                coma_num_of_subject[subject_idx]--;
+                                teacher.empty_of_phase[phase]--;
+                                empty_rate[phase].first--;
+                                total_coma_num_phase[phase]++;
+                            }
+                        }
+                    }
+                }
+            }
+//            BOOST_FOREACH(int num, coma_num_of_subject) {
+//                cout << num;
+//            }cout << endl;
+            if(CheckRemainigComa(coma_num_of_subject)) break;
+            UpdateSubjectPriority(subject_priority, coma_num_of_subject, subject_num);
+        }
+    }
+}
+
+void ConvertMachine::UpdatePhaseEmptyRate(PHASE_PRIORITY& phase_priority, EMPTY_RATE empty_rate) {
+    for (EMPTY_RATE::iterator empty_rate_it = empty_rate.begin(); empty_rate_it != empty_rate.end(); empty_rate_it++) {
+        phase_priority.push(*empty_rate_it);
+    }
+}
+
+
+int ConvertMachine::PhaseToWholeDayIndex(int phase) {
+    int whole_day_idx = 0;
+    for (int phase_idx = 0; phase_idx < phase; phase_idx++) {
+        whole_day_idx += devide_piriod_list[phase_idx].size();
+    }
+    return whole_day_idx;
+}
+
+
+void ConvertMachine::UpdateSubjectPriority(SUBJECT_PRIORITY& subject_priority, vector<int> coma_num_of_subject, int subject_num) {
+    for (int subject = 0; subject < subject_num; subject++) {
+        subject_priority.push(make_pair(coma_num_of_subject[subject], subject));
+    }
+}
+
+
+int ConvertMachine::CheckRemainigComa(vector<int> coma_num_of_subject) {
+    int zero_num = 0;
+    BOOST_FOREACH(int num, coma_num_of_subject) {
+        if (num == 0) zero_num++;
+    }
+    if (zero_num == coma_num_of_subject.size()) return 1;
+    return 0;
+}
+
+
+void ConvertMachine::GenerateLPProbrem(ofstream& lp, STUDENTS students, TEACHERS teachers) {
+        fileout.OutputString(lp, "minimize");
+        // 先生たちの指導回数の平均化（目的関数）
+        GenerateTeachAverageingFunction(lp);
+        fileout.OutputString(lp, "\nsubject to");
+        // 先生の生徒に対する割り当て可能性
+        GenerateTeacherAssignFomula(lp, students, teachers);
+    //    // 生徒の先生に対する割り当て可能性
+    //    convert_machine.GenerateStudentAssignFomula(lp, students, teachers);
+    //    // 生徒のコマ数の制限
+    //    convert_machine.GenerateComaFomula(lp, students, teachers);
+    //    // 高校生に対するコマの制限
+    //    convert_machine.GenerateHSFomula(lp, students, teachers);
+    //    // 先生の指導回数の平均化（制約）
+    //    convert_machine.GenerateTeachAverageingFomula(lp, students, teachers);
+    //    // 01変数であることを宣言
+//        fileiout.OutputString(lp, "\nbinary");
+//        GenerateBinaryVariable(lp, students, teachers);
+//        fileiout.OutputString(lp, "\ngeneral");
+//        fileiout.OutputString(lp, "y_M y_m");
+        fileiout.OutputString(lp, "\nend");
 }
 
 
