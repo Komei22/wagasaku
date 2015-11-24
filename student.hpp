@@ -20,7 +20,7 @@ const SUBJECT SOCIETY = 4;
 
 // 学年
 typedef int GRADE;
-const GRADE HIGHT = 0;
+const GRADE HIGH = 0;
 const GRADE JUNIOR = 1;
 
 // 生徒名

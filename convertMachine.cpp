@@ -1,5 +1,6 @@
 // convertMachine.cpp
 #include <math.h>
+#include <sstream>
 #include <boost/lexical_cast.hpp>
 #include <boost/foreach.hpp>
 #include <boost/format.hpp>
@@ -95,11 +96,21 @@ void ConvertMachine::DistributeComaForFhase(STUDENT& student, TEACHERS& teachers
     
     vector<int> coma_num_of_subject;
     copy(student.subject.begin(), student.subject.end(), back_inserter(coma_num_of_subject));
+    
+    //            cout << "rest" << endl;
+    //            BOOST_FOREACH(int num, coma_num_of_subject) {
+    //                cout << num << ",";
+    //            }cout << endl;
     int phase_start_idx = 0;
     EMPTY_RATE empty_rate;
     // あるphaseに割り当てができるかをチェックして割り当て可能なら割り当てていく、空きコマが足りない場合は出来るだけ割り当てておく
     for (int phase = 0; phase < phase_num; phase++) {
-        int empty_num = AssignComaInFhase(student, teachers, phase_start_idx, phase, coma_num_of_subject, coma_thre_of_subject, coma_thre_of_all);
+        int empty_num = 0;
+        if (student.grade == JUNIOR) {
+            empty_num = AssignComaInFhaseJunior(student, teachers, phase_start_idx, phase, coma_num_of_subject, coma_thre_of_subject, coma_thre_of_all);
+        } else {
+            empty_num = AssignComaInFhaseHigh(student, teachers, phase_start_idx, phase, coma_num_of_subject, coma_thre_of_subject, coma_thre_of_all);
+        }
         empty_rate.push_back(make_pair(empty_num, phase));
         phase_start_idx += devide_piriod_list[phase].size();
     }
@@ -109,7 +120,13 @@ void ConvertMachine::DistributeComaForFhase(STUDENT& student, TEACHERS& teachers
     for (int subject_idx = 0; subject_idx < subject_num; subject_idx++) {
         if(coma_num_of_subject[subject_idx] > 0) is_rest = true;
     }
-    if (is_rest) AssignRemainingComa(student, teachers, empty_rate, coma_num_of_subject, coma_thre_of_all);
+    if (is_rest) {
+        if (student.grade == JUNIOR) {
+            AssignRemainingComaJunior(student, teachers, empty_rate, coma_num_of_subject, coma_thre_of_all);
+        } else {
+            AssignRemainingComaHigh(student, teachers, empty_rate, coma_num_of_subject, coma_thre_of_all);
+        }
+    }
     
     //    デバッグ用　phaseごとの各科目のコマ数
     cout << student.name << endl;
@@ -148,7 +165,7 @@ int ConvertMachine::CalcurateComaThreAll(STUDENT student, int phase_num) {
 }
 
 
-int ConvertMachine::AssignComaInFhase(STUDENT& student, TEACHERS& teachers, int phase_start_idx, int phase, vector<int> &coma_num_of_subject, vector<int> coma_thre_of_subject, int coma_thre_of_all) {
+int ConvertMachine::AssignComaInFhaseJunior(STUDENT& student, TEACHERS& teachers, int phase_start_idx, int phase, vector<int> &coma_num_of_subject, vector<int> coma_thre_of_subject, int coma_thre_of_all) {
     int subject_num = student.subject.size();
     int coma_num = student.schedule[0].size();
     // 生徒の最初に探索される教科
@@ -221,10 +238,84 @@ int ConvertMachine::AssignComaInFhase(STUDENT& student, TEACHERS& teachers, int 
 }
 
 
-void ConvertMachine::AssignRemainingComa(STUDENT& student, TEACHERS& teachers, EMPTY_RATE& empty_rate, vector<int> coma_num_of_subject, int coma_thre_of_all) {
+int ConvertMachine::AssignComaInFhaseHigh(STUDENT& student, TEACHERS& teachers, int phase_start_idx, int phase, vector<int> &coma_num_of_subject, vector<int> coma_thre_of_subject, int coma_thre_of_all) {
+    int subject_num = student.subject.size();
+    int coma_num = student.schedule[0].size();
+    // 生徒の最初に探索される教科
+    int first_search_subject;
+    for (int subject = 0; subject < subject_num; subject++) {
+        if(student.subject[subject] != 0){
+            first_search_subject = subject;
+            break;
+        }
+    }
+    // 科目の優先度の設定
+    typedef priority_queue<pair<int, int> > SUBJECT_PRIORITY;
+    SUBJECT_PRIORITY subject_priority;
+    for (int subject = 0; subject < subject_num; subject++) {
+        subject_priority.push(make_pair(coma_num_of_subject[subject], subject));
+    }
+    
+    // コマの割り当て
+    int empty_shcedule_num = 0;
+    int total_assign_num = 0;
+    while (!subject_priority.empty()) {
+        int subject_idx = subject_priority.top().second;
+        subject_priority.pop();
+        if (coma_num_of_subject[subject_idx] <= 0) continue;
+        for (int day_idx = phase_start_idx; day_idx < phase_start_idx+devide_piriod_list[phase].size(); day_idx++) {
+            if (!student.nomination_teacher_id[subject_idx].empty()) {
+                BOOST_FOREACH(int nominate_teacher_id, student.nomination_teacher_id[subject_idx]) {
+                    BOOST_FOREACH(TEACHER& teacher, teachers) {
+                        if (nominate_teacher_id == teacher.id) {
+                            for (int coma_idx = 0; coma_idx < coma_num; coma_idx++) {
+                                if (coma_idx == coma_num-1) break;
+                                if (student.schedule[day_idx][coma_idx] ==1 && teacher.schedule[day_idx][coma_idx] == 1 && student.schedule[day_idx][coma_idx+1] == 1 && teacher.schedule[day_idx][coma_idx+1] == 1) {
+                                    if(subject_idx == first_search_subject) empty_shcedule_num++;
+                                    if (teacher.empty_of_phase[phase] == 0 || total_assign_num == coma_thre_of_all) break;
+                                    if (student.coma_of_subject_phase[phase][subject_idx] < coma_thre_of_subject[subject_idx]) {
+                                        student.coma_of_subject_phase[phase][subject_idx]++;
+                                        total_assign_num++;
+                                        empty_shcedule_num--;
+                                        teacher.empty_of_phase[phase]--;teacher.empty_of_phase[phase]--;
+                                        coma_num_of_subject[subject_idx]--;
+                                    } else {
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            } else {
+                BOOST_FOREACH(TEACHER& teacher, teachers) {
+                    for (int coma_idx = 0; coma_idx < coma_num; coma_idx++) {
+                        if (coma_idx == coma_num-1) break;
+                        if (student.schedule[day_idx][coma_idx] ==1 && teacher.schedule[day_idx][coma_idx] == 1 && student.schedule[day_idx][coma_idx+1] == 1 && teacher.schedule[day_idx][coma_idx+1] == 1) {
+                            if(subject_idx == first_search_subject) empty_shcedule_num++;
+                            if (teacher.empty_of_phase[phase] == 0 || total_assign_num == coma_thre_of_all) break;
+                            if (student.coma_of_subject_phase[phase][subject_idx] < coma_thre_of_subject[subject_idx]) {
+                                student.coma_of_subject_phase[phase][subject_idx]++;
+                                total_assign_num++;
+                                empty_shcedule_num--;
+                                teacher.empty_of_phase[phase]--;teacher.empty_of_phase[phase]--;
+                                coma_num_of_subject[subject_idx]--;
+                            } else {
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return empty_shcedule_num;
+}
+
+
+void ConvertMachine::AssignRemainingComaJunior(STUDENT& student, TEACHERS& teachers, EMPTY_RATE& empty_rate, vector<int> coma_num_of_subject, int coma_thre_of_all) {
     // phaseの指導可能コマの空き具合(empty_rate)からphaseの優先度を決定
     PHASE_PRIORITY phase_priority;
-//    UpdatePhaseEmptyRate(phase_priority, empty_rate);
     
     // 科目の優先度の設定
     int subject_num = coma_num_of_subject.size();
@@ -244,17 +335,17 @@ void ConvertMachine::AssignRemainingComa(STUDENT& student, TEACHERS& teachers, E
     
     
     // デバッグ用
-//        cout << student.name << endl;
-//        BOOST_FOREACH(vector<int> subject, student.coma_of_subject_phase) {
-//            BOOST_FOREACH(int coma, subject) {
-//                cout << coma;
-//            }cout << endl;
-//        }
-//    
-//    cout << "rest" << endl;
-//    BOOST_FOREACH(int num, coma_num_of_subject) {
-//        cout << num;
-//    }cout << endl;
+    //            cout << student.name << endl;
+    //            BOOST_FOREACH(vector<int> subject, student.coma_of_subject_phase) {
+    //                BOOST_FOREACH(int coma, subject) {
+    //                    cout << coma;
+    //                }cout << endl;
+    //            }
+    //
+    //        cout << "rest" << endl;
+    //        BOOST_FOREACH(int num, coma_num_of_subject) {
+    //            cout << num;
+    //        }cout << endl;
     
     // 余りのコマを割り当てる
     int coma_num = student.schedule[0].size();
@@ -270,47 +361,143 @@ void ConvertMachine::AssignRemainingComa(STUDENT& student, TEACHERS& teachers, E
                 int subject_idx = subject_priority.top().second;
                 subject_priority.pop();
                 //            cout << "subject:" << subject_idx << endl;
-                int whole_day_idx = PhaseToWholeDayIndex(phase);
-                for (int coma_idx = 0; coma_idx < coma_num; coma_idx++) {
-                    if (!student.nomination_teacher_id[subject_idx].empty()) {
-                        BOOST_FOREACH(int nominate_teacher_id, student.nomination_teacher_id[subject_idx]) {
-                            BOOST_FOREACH(TEACHER teacher, teachers) {
-                                if (teacher.id == nominate_teacher_id) {
-                                    if (student.schedule[whole_day_idx][coma_idx] == 1 && teacher.schedule[whole_day_idx][coma_idx] == 1) {
-                                        if (total_coma_num_phase[phase] >= coma_thre_of_all || teacher.empty_of_phase[phase] == 0) break;
-                                        if (coma_num_of_subject[subject_idx] == 0) break;
-                                        student.coma_of_subject_phase[phase][subject_idx]++;
-                                        coma_num_of_subject[subject_idx]--;
-                                        teacher.empty_of_phase[phase]--;
-                                        empty_rate[phase].first--;
-                                        total_coma_num_phase[phase]++;
+                int whole_day_idx_start = PhaseToWholeDayIndex(phase);
+                for (int whole_day_idx = whole_day_idx_start; whole_day_idx < whole_day_idx_start+devide_piriod_list[phase].size(); whole_day_idx++) {
+                    for (int coma_idx = 0; coma_idx < coma_num; coma_idx++) {
+                        if (!student.nomination_teacher_id[subject_idx].empty()) {
+                            BOOST_FOREACH(int nominate_teacher_id, student.nomination_teacher_id[subject_idx]) {
+                                BOOST_FOREACH(TEACHER teacher, teachers) {
+                                    if (teacher.id == nominate_teacher_id) {
+                                        if (student.schedule[whole_day_idx][coma_idx] == 1 && teacher.schedule[whole_day_idx][coma_idx] == 1) {
+                                            if (total_coma_num_phase[phase] >= coma_thre_of_all || teacher.empty_of_phase[phase] == 0) break;
+                                            if (coma_num_of_subject[subject_idx] == 0) break;
+                                            student.coma_of_subject_phase[phase][subject_idx]++;
+                                            coma_num_of_subject[subject_idx]--;
+                                            teacher.empty_of_phase[phase]--;
+                                            empty_rate[phase].first--;
+                                            total_coma_num_phase[phase]++;
+                                        }
                                     }
                                 }
                             }
-                        }
-                    } else {
-                        BOOST_FOREACH(TEACHER teacher, teachers) {
-                            if (student.schedule[whole_day_idx][coma_idx] == 1 && teacher.schedule[whole_day_idx][coma_idx] == 1) {
-                                if (total_coma_num_phase[phase] >= coma_thre_of_all || teacher.empty_of_phase[phase] == 0) break;
-                                if (coma_num_of_subject[subject_idx] == 0) break;
-                                student.coma_of_subject_phase[phase][subject_idx]++;
-                                coma_num_of_subject[subject_idx]--;
-                                teacher.empty_of_phase[phase]--;
-                                empty_rate[phase].first--;
-                                total_coma_num_phase[phase]++;
+                        } else {
+                            BOOST_FOREACH(TEACHER teacher, teachers) {
+                                if (student.schedule[whole_day_idx][coma_idx] == 1 && teacher.schedule[whole_day_idx][coma_idx] == 1) {
+                                    if (total_coma_num_phase[phase] >= coma_thre_of_all || teacher.empty_of_phase[phase] == 0) break;
+                                    if (coma_num_of_subject[subject_idx] == 0) break;
+                                    student.coma_of_subject_phase[phase][subject_idx]++;
+                                    coma_num_of_subject[subject_idx]--;
+                                    teacher.empty_of_phase[phase]--;
+                                    empty_rate[phase].first--;
+                                    total_coma_num_phase[phase]++;
+                                }
                             }
                         }
                     }
                 }
             }
-//            BOOST_FOREACH(int num, coma_num_of_subject) {
-//                cout << num;
-//            }cout << endl;
+            //            BOOST_FOREACH(int num, coma_num_of_subject) {
+            //                cout << num;
+            //            }cout << endl;
             if(CheckRemainigComa(coma_num_of_subject)) break;
             UpdateSubjectPriority(subject_priority, coma_num_of_subject, subject_num);
         }
     }
 }
+
+void ConvertMachine::AssignRemainingComaHigh(STUDENT& student, TEACHERS& teachers, EMPTY_RATE& empty_rate, vector<int> coma_num_of_subject, int coma_thre_of_all) {
+    // phaseの指導可能コマの空き具合(empty_rate)からphaseの優先度を決定
+    PHASE_PRIORITY phase_priority;
+    
+    // 科目の優先度の設定
+    int subject_num = coma_num_of_subject.size();
+    SUBJECT_PRIORITY subject_priority;
+    UpdateSubjectPriority(subject_priority, coma_num_of_subject, subject_num);
+    
+    // 各phase合計のコマ数を保管
+    int phase_num = devide_piriod_list.size();
+    vector<int> total_coma_num_phase;
+    for (int phase_idx = 0; phase_idx < phase_num; phase_idx++) {
+        int total_coma = 0;
+        for (int subject_idx = 0; subject_idx < subject_num; subject_idx++) {
+            total_coma += student.coma_of_subject_phase[phase_idx][subject_idx];
+        }
+        total_coma_num_phase.push_back(total_coma);
+    }
+    
+    
+    // デバッグ用
+    //            cout << student.name << endl;
+    //            BOOST_FOREACH(vector<int> subject, student.coma_of_subject_phase) {
+    //                BOOST_FOREACH(int coma, subject) {
+    //                    cout << coma;
+    //                }cout << endl;
+    //            }
+    //
+    //        cout << "rest" << endl;
+    //        BOOST_FOREACH(int num, coma_num_of_subject) {
+    //            cout << num << ",";
+    //        }cout << endl;
+    
+    // 余りのコマを割り当てる
+    int coma_num = student.schedule[0].size();
+    while (!CheckRemainigComa(coma_num_of_subject)) {
+        // 各phaseの平均の割り当て可能コマ数を1引き上げる
+        coma_thre_of_all++;
+        UpdatePhaseEmptyRate(phase_priority, empty_rate);
+        while (!phase_priority.empty()) {
+            int phase = phase_priority.top().second;
+            phase_priority.pop();
+            //        cout << "phase:" << phase << endl;
+            while (!subject_priority.empty()) {
+                int subject_idx = subject_priority.top().second;
+                subject_priority.pop();
+                //            cout << "subject:" << subject_idx << endl;
+                int whole_day_idx_start = PhaseToWholeDayIndex(phase);
+                for (int whole_day_idx = whole_day_idx_start; whole_day_idx < whole_day_idx_start+devide_piriod_list[phase].size(); whole_day_idx++) {
+                    for (int coma_idx = 0; coma_idx < coma_num; coma_idx++) {
+                        if (coma_idx == coma_num-1) break;
+                        if (!student.nomination_teacher_id[subject_idx].empty()) {
+                            BOOST_FOREACH(int nominate_teacher_id, student.nomination_teacher_id[subject_idx]) {
+                                BOOST_FOREACH(TEACHER teacher, teachers) {
+                                    if (teacher.id == nominate_teacher_id) {
+                                        if (student.schedule[whole_day_idx][coma_idx] == 1 && teacher.schedule[whole_day_idx][coma_idx] == 1 && student.schedule[whole_day_idx][coma_idx+1] == 1 && teacher.schedule[whole_day_idx][coma_idx+1] == 1) {
+                                            if (total_coma_num_phase[phase] >= coma_thre_of_all || teacher.empty_of_phase[phase] == 0) break;
+                                            if (coma_num_of_subject[subject_idx] == 0) break;
+                                            student.coma_of_subject_phase[phase][subject_idx]++;
+                                            coma_num_of_subject[subject_idx]--;
+                                            teacher.empty_of_phase[phase]--;teacher.empty_of_phase[phase]--;
+                                            empty_rate[phase].first--;
+                                            total_coma_num_phase[phase]++;
+                                        }
+                                    }
+                                }
+                            }
+                        } else {
+                            BOOST_FOREACH(TEACHER teacher, teachers) {
+                                if (student.schedule[whole_day_idx][coma_idx] == 1 && teacher.schedule[whole_day_idx][coma_idx] == 1 && student.schedule[whole_day_idx][coma_idx+1] == 1 && teacher.schedule[whole_day_idx][coma_idx+1] == 1) {
+                                    if (total_coma_num_phase[phase] >= coma_thre_of_all || teacher.empty_of_phase[phase] == 0) break;
+                                    if (coma_num_of_subject[subject_idx] == 0) break;
+                                    student.coma_of_subject_phase[phase][subject_idx]++;
+                                    coma_num_of_subject[subject_idx]--;
+                                    teacher.empty_of_phase[phase]--;teacher.empty_of_phase[phase]--;
+                                    empty_rate[phase].first--;
+                                    total_coma_num_phase[phase]++;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            //            BOOST_FOREACH(int num, coma_num_of_subject) {
+            //                cout << num;
+            //            }cout << endl;
+            if(CheckRemainigComa(coma_num_of_subject)) break;
+            UpdateSubjectPriority(subject_priority, coma_num_of_subject, subject_num);
+        }
+    }
+}
+
 
 void ConvertMachine::UpdatePhaseEmptyRate(PHASE_PRIORITY& phase_priority, EMPTY_RATE empty_rate) {
     for (EMPTY_RATE::iterator empty_rate_it = empty_rate.begin(); empty_rate_it != empty_rate.end(); empty_rate_it++) {
@@ -345,27 +532,27 @@ int ConvertMachine::CheckRemainigComa(vector<int> coma_num_of_subject) {
 }
 
 
-void ConvertMachine::GenerateLPProbrem(ofstream& lp, STUDENTS students, TEACHERS teachers) {
-        fileout.OutputString(lp, "minimize");
-        // 先生たちの指導回数の平均化（目的関数）
-        GenerateTeachAverageingFunction(lp);
-        fileout.OutputString(lp, "\nsubject to");
-        // 先生の生徒に対する割り当て可能性
-        GenerateTeacherAssignFomula(lp, students, teachers);
-    //    // 生徒の先生に対する割り当て可能性
-    //    convert_machine.GenerateStudentAssignFomula(lp, students, teachers);
-    //    // 生徒のコマ数の制限
-    //    convert_machine.GenerateComaFomula(lp, students, teachers);
-    //    // 高校生に対するコマの制限
-    //    convert_machine.GenerateHSFomula(lp, students, teachers);
-    //    // 先生の指導回数の平均化（制約）
-    //    convert_machine.GenerateTeachAverageingFomula(lp, students, teachers);
-    //    // 01変数であることを宣言
-//        fileiout.OutputString(lp, "\nbinary");
-//        GenerateBinaryVariable(lp, students, teachers);
-//        fileiout.OutputString(lp, "\ngeneral");
-//        fileiout.OutputString(lp, "y_M y_m");
-        fileiout.OutputString(lp, "\nend");
+void ConvertMachine::GenerateLPProbrem(ofstream& lp, STUDENTS students, TEACHERS teachers, int phase) {
+    fileout.OutputString(lp, "minimize");
+    // 先生たちの指導回数の平均化（目的関数）
+    GenerateTeachAverageingFunction(lp);
+    fileout.OutputString(lp, "\nsubject to");
+    // 先生の生徒に対する割り当て可能性
+    GenerateTeacherAssignFomula(lp, students, teachers, phase);
+    // 生徒の先生に対する割り当て可能性
+    GenerateStudentAssignFomula(lp, students, teachers, phase);
+    // 生徒のコマ数の制限
+    GenerateComaFomula(lp, students, teachers, phase);
+    // 高校生に対するコマの制限
+    GenerateHSFomula(lp, students, teachers, phase);
+    // 先生の指導回数の平均化（制約）
+    GenerateTeachAverageingFomula(lp, students, teachers, phase);
+    // 01変数であることを宣言
+    fileout.OutputString(lp, "\nbinary");
+    GenerateBinaryVariable(lp, students, teachers, phase);
+    fileout.OutputString(lp, "\ngeneral");
+    fileout.OutputString(lp, "y_M y_m");
+    fileout.OutputString(lp, "\nend");
 }
 
 
@@ -373,19 +560,32 @@ void ConvertMachine::GenerateTeachAverageingFunction(ofstream& lp) {
     fileout.OutputString(lp, "y_M - y_m");
 }
 
-void ConvertMachine::GenerateTeacherAssignFomula(ofstream& lp, STUDENTS students, TEACHERS teachers) {
+
+void ConvertMachine::SaveWritedVariable(int teacher_id, int student_id, int subject, int day, int coma) {
+    ostringstream oss;
+    oss << "x_" << teacher_id << "_" << student_id << "_" << subject << "_" << day << "_" << coma;
+    string variable = oss.str();
+    if (writed_variable.find(variable) == writed_variable.end()) {
+        writed_variable.insert(variable);
+    }
+}
+
+
+void ConvertMachine::GenerateTeacherAssignFomula(ofstream& lp, STUDENTS students, TEACHERS teachers, int phase) {
     // ある講師のあるコマに生徒の科目を割り当てられるかどうか
     BOOST_FOREACH(TEACHER teacher, teachers) {
-        for (int day = 0; day < piriod.size(); day++) {
+        int whole_day_idx_start = PhaseToWholeDayIndex(phase);
+        for (int day = whole_day_idx_start; day < whole_day_idx_start+devide_piriod_list[phase].size(); day++) {
             for (int coma = 0; coma < teacher.schedule[day].size(); coma++) {
                 bool isOutput = false;
                 BOOST_FOREACH(STUDENT student, students) {
                     for (int subject = 0; subject < teacher.teach_subject.size(); subject++) {
-                        if (teacher.teach_subject[subject] == 1 && student.subject[subject] > 0) {  //ある科目が指導できるか、その生徒がその教科を取っているか
+                        if (teacher.teach_subject[subject] == 1 && student.coma_of_subject_phase[phase][subject] > 0) {  //ある科目が指導できるか、その生徒がその教科を取っているか
                             if (student.nomination_teacher_id[subject].empty()) {  //講師の指定がなかった場合
                                 if (teacher.schedule[day][coma] == 1 && student.schedule[day][coma] == 1) {  //どちらのスケジュールも空いていたら
                                     //x_teacherid_studentid_subject_day_comaを生成
                                     fileout.OutputVariable(lp, "+", teacher.id, student.id, subject, day, coma);
+                                    SaveWritedVariable(teacher.id, student.id, subject, day, coma);
                                     isOutput = true;
                                 }
                             } else {  //講師の指定があった場合
@@ -394,6 +594,7 @@ void ConvertMachine::GenerateTeacherAssignFomula(ofstream& lp, STUDENTS students
                                         if (teacher.schedule[day][coma] == 1 && student.schedule[day][coma] == 1) {  //どちらのスケジュールも空いていたら
                                             //x_teacherid_studentid_subject_day_comaを生成
                                             fileout.OutputVariable(lp, "+", teacher.id, student.id, subject, day, coma);
+                                            SaveWritedVariable(teacher.id, student.id, subject, day, coma);
                                             isOutput = true;
                                         }
                                     }
@@ -408,19 +609,21 @@ void ConvertMachine::GenerateTeacherAssignFomula(ofstream& lp, STUDENTS students
     }
 }
 
-void ConvertMachine::GenerateStudentAssignFomula(ofstream& lp, STUDENTS students, TEACHERS teachers) {
+void ConvertMachine::GenerateStudentAssignFomula(ofstream& lp, STUDENTS students, TEACHERS teachers, int phase) {
     // ある講師のあるコマに生徒の科目を割り当てられるかどうか
     BOOST_FOREACH(STUDENT student, students) {
-        for (int day = 0; day < piriod.size(); day++) {
+        int whole_day_idx_start = PhaseToWholeDayIndex(phase);
+        for (int day = whole_day_idx_start; day < whole_day_idx_start+devide_piriod_list[phase].size(); day++) {
             for (int coma = 0; coma < student.schedule[day].size(); coma++) {
                 bool isOutput = false;
                 BOOST_FOREACH(TEACHER teacher, teachers) {
                     for (int subject = 0; subject < student.subject.size(); subject++) {
-                        if (teacher.teach_subject[subject] == 1 && student.subject[subject] > 0) {  //ある科目が指導できるか、その生徒がその教科を取っているか
+                        if (teacher.teach_subject[subject] == 1 && student.coma_of_subject_phase[phase][subject] > 0) {  //ある科目が指導できるか、その生徒がその教科を取っているか
                             if (student.nomination_teacher_id[subject].empty()) {  //講師の指定がなかった場合
                                 if (teacher.schedule[day][coma] == 1 && student.schedule[day][coma] == 1) {  //どちらのスケジュールも空いていたら
                                     //x_teacherid_studentid_subject_day_comaを生成
                                     fileout.OutputVariable(lp, "+", teacher.id, student.id, subject, day, coma);
+                                    SaveWritedVariable(teacher.id, student.id, subject, day, coma);
                                     isOutput = true;
                                 }
                             } else {  //講師の指定があった場合
@@ -429,6 +632,7 @@ void ConvertMachine::GenerateStudentAssignFomula(ofstream& lp, STUDENTS students
                                         if (teacher.schedule[day][coma] == 1 && student.schedule[day][coma] == 1) {  //どちらのスケジュールも空いていたら
                                             //x_teacherid_studentid_subject_day_comaを生成
                                             fileout.OutputVariable(lp, "+", teacher.id, student.id, subject, day, coma);
+                                            SaveWritedVariable(teacher.id, student.id, subject, day, coma);
                                             isOutput = true;
                                         }
                                     }
@@ -443,18 +647,20 @@ void ConvertMachine::GenerateStudentAssignFomula(ofstream& lp, STUDENTS students
     }
 }
 
-void ConvertMachine::GenerateComaFomula(ofstream& lp,STUDENTS students, TEACHERS teachers) {
+void ConvertMachine::GenerateComaFomula(ofstream& lp,STUDENTS students, TEACHERS teachers, int phase) {
     BOOST_FOREACH(STUDENT student, students) {
         for (int subject = 0; subject < student.subject.size(); subject++) {
             bool isOutput = false;
             BOOST_FOREACH(TEACHER teacher, teachers) {
-                for (int day = 0; day < piriod.size(); day++) {
+                int whole_day_idx_start = PhaseToWholeDayIndex(phase);
+                for (int day = whole_day_idx_start; day < whole_day_idx_start+devide_piriod_list[phase].size(); day++) {
                     for (int coma = 0; coma < student.schedule[day].size(); coma++) {
-                        if (teacher.teach_subject[subject] == 1 && student.subject[subject] > 0) {  //ある科目が指導できるか、その生徒がその教科を取っているか
+                        if (teacher.teach_subject[subject] == 1 && student.coma_of_subject_phase[phase][subject] > 0) {  //ある科目が指導できるか、その生徒がその教科を取っているか
                             if (student.nomination_teacher_id[subject].empty()) {  //講師の指定がなかった場合
                                 if (teacher.schedule[day][coma] == 1 && student.schedule[day][coma] == 1) {  //どちらのスケジュールも空いていたら
                                     //x_teacherid_studentid_subject_day_comaを生成
                                     fileout.OutputVariable(lp, "+", teacher.id, student.id, subject, day, coma);
+                                    SaveWritedVariable(teacher.id, student.id, subject, day, coma);
                                     isOutput = true;
                                 }
                             } else {  //講師の指定があった場合
@@ -463,6 +669,7 @@ void ConvertMachine::GenerateComaFomula(ofstream& lp,STUDENTS students, TEACHERS
                                         if (teacher.schedule[day][coma] == 1 && student.schedule[day][coma] == 1) {  //どちらのスケジュールも空いていたら
                                             //x_teacherid_studentid_subject_day_comaを生成
                                             fileout.OutputVariable(lp, "+", teacher.id, student.id, subject, day, coma);
+                                            SaveWritedVariable(teacher.id, student.id, subject, day, coma);
                                             isOutput = true;
                                         }
                                     }
@@ -473,31 +680,124 @@ void ConvertMachine::GenerateComaFomula(ofstream& lp,STUDENTS students, TEACHERS
                 }
             }
             if(isOutput) {
-                string subject_num = lexical_cast<string>(student.subject[subject]);
-                fileout.OutputString(lp, "= " + subject_num);
+                int subject_num = student.coma_of_subject_phase[phase][subject];
+                if(student.grade == HIGH) subject_num = subject_num*2;
+                string subject_num_str = lexical_cast<string>(subject_num);
+                fileout.OutputString(lp, "= " + subject_num_str);
             }
         }
     }
 }
 
 
-void ConvertMachine::GenerateHSFomula(ofstream& lp, STUDENTS students, TEACHERS teachers) {
+void ConvertMachine::GenerateHSFomula(ofstream& lp, STUDENTS students, TEACHERS teachers, int phase) {
     // 高校生は2コマで1コマとする制約式
+//    BOOST_FOREACH(STUDENT student, students) {
+//        if (student.grade == HIGH) {
+//            for (int subject = 0; subject < student.subject.size(); subject++) {
+//                BOOST_FOREACH(TEACHER teacher, teachers) {
+//                    if (student.nomination_teacher_id[subject].empty()) {
+//                        if (teacher.teach_subject[subject] == 1 && student.coma_of_subject_phase[phase][subject] > 0) {
+//                            int whole_day_idx_start = PhaseToWholeDayIndex(phase);
+//                            for (int day = whole_day_idx_start; day < whole_day_idx_start+devide_piriod_list[phase].size(); day++) {
+//                                for (int coma = 0; coma < student.schedule[day].size(); coma++) {
+//                                    if (coma < student.schedule[day].size()-1) {  //最終コマでなく、生徒のスケジュールが空いていた場合
+//                                        if (student.schedule[day][coma] == 1 && student.schedule[day][coma+1] == 1 && teacher.schedule[day][coma] == 1 && teacher.schedule[day][coma+1] == 1) {
+//                                            //x_teacherid_studentid_subject_day_comaを生成
+//                                            fileout.OutputVariable(lp, "+", teacher.id, student.id, subject, day, coma);
+//                                            fileout.OutputVariable(lp, "-", teacher.id, student.id, subject, day, coma+1);
+//                                            fileout.OutputString(lp, ">= 0");
+//                                            fileout.OutputVariable(lp, "-", teacher.id, student.id, subject, day, coma);
+//                                            fileout.OutputVariable(lp, "+", teacher.id, student.id, subject, day, coma+1);
+//                                            fileout.OutputString(lp, ">= 0");
+//                                            SaveWritedVariable(teacher.id, student.id, subject, day, coma);
+//                                            SaveWritedVariable(teacher.id, student.id, subject, day, coma+1);
+//                                        }
+//                                        coma++;
+//                                    }
+//                                }
+//                            }
+//                        }
+//                    } else {
+//                        bool is_nominate_teacher = false;
+//                        BOOST_FOREACH(int nominate_teacher_id, student.nomination_teacher_id[subject]) {
+//                            if (nominate_teacher_id == teacher.id) is_nominate_teacher = true;
+//                        }
+//                        if (!is_nominate_teacher) continue;
+//                        if (teacher.teach_subject[subject] == 1 && student.coma_of_subject_phase[phase][subject] > 0) {
+//                            int whole_day_idx_start = PhaseToWholeDayIndex(phase);
+//                            for (int day = whole_day_idx_start; day < whole_day_idx_start+devide_piriod_list[phase].size(); day++) {
+//                                for (int coma = 0; coma < student.schedule[day].size(); coma++) {
+//                                    if (coma < student.schedule[day].size()-1) {  //最終コマでなく、生徒のスケジュールが空いていた場合
+//                                        if (student.schedule[day][coma] == 1 && student.schedule[day][coma+1] == 1 && teacher.schedule[day][coma] == 1 && teacher.schedule[day][coma+1] == 1) {
+//                                            //x_teacherid_studentid_subject_day_comaを生成
+//                                            fileout.OutputVariable(lp, "+", teacher.id, student.id, subject, day, coma);
+//                                            fileout.OutputVariable(lp, "-", teacher.id, student.id, subject, day, coma+1);
+//                                            fileout.OutputString(lp, ">= 0");
+//                                            fileout.OutputVariable(lp, "-", teacher.id, student.id, subject, day, coma);
+//                                            fileout.OutputVariable(lp, "+", teacher.id, student.id, subject, day, coma+1);
+//                                            fileout.OutputString(lp, ">= 0");
+//                                            SaveWritedVariable(teacher.id, student.id, subject, day, coma);
+//                                            SaveWritedVariable(teacher.id, student.id, subject, day, coma+1);
+//                                        }
+//                                        coma++;
+//                                    }
+//                                }
+//                            }
+//                        }
+//                    }
+//                }
+//            }
+//        }
+//    }
     BOOST_FOREACH(STUDENT student, students) {
-        if (student.grade == HIGHT) {
-            BOOST_FOREACH(TEACHER teacher, teachers) {
-                for (int subject = 0; subject < student.subject.size(); subject++) {
-                    for (int day = 0; day < piriod.size(); day++) {
-                        for (int coma = 0; coma < student.schedule[day].size(); coma++) {
-                            if (student.schedule[day][coma] == 1 && coma != student.schedule[day].size()-1) {  //最終コマでなく、生徒のスケジュールが空いていた場合
-                                if (student.schedule[day][coma+1] == 1) {
-                                    //x_teacherid_studentid_subject_day_comaを生成
-                                    fileout.OutputVariable(lp, "+", teacher.id, student.id, subject, day, coma);
-                                    fileout.OutputVariable(lp, "-", teacher.id, student.id, subject, day, coma+1);
-                                    fileout.OutputString(lp, ">= 0");
-                                    fileout.OutputVariable(lp, "-", teacher.id, student.id, subject, day, coma);
-                                    fileout.OutputVariable(lp, "+", teacher.id, student.id, subject, day, coma+1);
-                                    fileout.OutputString(lp, ">= 0");
+        if (student.grade == HIGH) {
+            for (int subject = 0; subject < student.subject.size(); subject++) {
+                BOOST_FOREACH(TEACHER teacher, teachers) {
+                    if (student.nomination_teacher_id[subject].empty()) {
+                        if (teacher.teach_subject[subject] == 1 && student.coma_of_subject_phase[phase][subject] > 0) {
+                            int whole_day_idx_start = PhaseToWholeDayIndex(phase);
+                            for (int day = whole_day_idx_start; day < whole_day_idx_start+devide_piriod_list[phase].size(); day++) {
+                                for (int coma = 0; coma < student.schedule[day].size(); coma++) {
+                                    if (coma < student.schedule[day].size()-1) {  //最終コマでなく、生徒のスケジュールが空いていた場合
+                                        if (student.schedule[day][coma] == 1 && student.schedule[day][coma+1] == 1 && teacher.schedule[day][coma] == 1 && teacher.schedule[day][coma+1] == 1) {
+                                            //x_teacherid_studentid_subject_day_comaを生成
+                                            fileout.OutputVariable(lp, "+", teacher.id, student.id, subject, day, coma);
+                                            fileout.OutputVariable(lp, "-", teacher.id, student.id, subject, day, coma+1);
+                                            fileout.OutputString(lp, ">= 0");
+                                            fileout.OutputVariable(lp, "-", teacher.id, student.id, subject, day, coma);
+                                            fileout.OutputVariable(lp, "+", teacher.id, student.id, subject, day, coma+1);
+                                            fileout.OutputString(lp, ">= 0");
+                                            SaveWritedVariable(teacher.id, student.id, subject, day, coma);
+                                            SaveWritedVariable(teacher.id, student.id, subject, day, coma+1);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    } else {
+                        bool is_nominate_teacher = false;
+                        BOOST_FOREACH(int nominate_teacher_id, student.nomination_teacher_id[subject]) {
+                            if (nominate_teacher_id == teacher.id) is_nominate_teacher = true;
+                        }
+                        if (!is_nominate_teacher) continue;
+                        if (teacher.teach_subject[subject] == 1 && student.coma_of_subject_phase[phase][subject] > 0) {
+                            int whole_day_idx_start = PhaseToWholeDayIndex(phase);
+                            for (int day = whole_day_idx_start; day < whole_day_idx_start+devide_piriod_list[phase].size(); day++) {
+                                for (int coma = 0; coma < student.schedule[day].size(); coma++) {
+                                    if (coma < student.schedule[day].size()-1) {  //最終コマでなく、生徒のスケジュールが空いていた場合
+                                        if (student.schedule[day][coma] == 1 && student.schedule[day][coma+1] == 1 && teacher.schedule[day][coma] == 1 && teacher.schedule[day][coma+1] == 1) {
+                                            //x_teacherid_studentid_subject_day_comaを生成
+                                            fileout.OutputVariable(lp, "+", teacher.id, student.id, subject, day, coma);
+                                            fileout.OutputVariable(lp, "-", teacher.id, student.id, subject, day, coma+1);
+                                            fileout.OutputString(lp, ">= 0");
+                                            fileout.OutputVariable(lp, "-", teacher.id, student.id, subject, day, coma);
+                                            fileout.OutputVariable(lp, "+", teacher.id, student.id, subject, day, coma+1);
+                                            fileout.OutputString(lp, ">= 0");
+                                            SaveWritedVariable(teacher.id, student.id, subject, day, coma);
+                                            SaveWritedVariable(teacher.id, student.id, subject, day, coma+1);
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -506,19 +806,24 @@ void ConvertMachine::GenerateHSFomula(ofstream& lp, STUDENTS students, TEACHERS 
             }
         }
     }
+
 }
 
-void ConvertMachine::GenerateTeachAverageingFomula(ofstream& lp,STUDENTS students, TEACHERS teachers) {
+void ConvertMachine::GenerateTeachAverageingFomula(ofstream& lp,STUDENTS students, TEACHERS teachers, int phase) {
     BOOST_FOREACH(TEACHER teacher, teachers) {
-        for (int day = 0; day < piriod.size(); day++) {
+        bool is_output = false;
+        int whole_day_idx_start = PhaseToWholeDayIndex(phase);
+        for (int day = whole_day_idx_start; day < whole_day_idx_start+devide_piriod_list[phase].size(); day++) {
             for (int coma = 0; coma < teacher.schedule[day].size(); coma++) {
                 BOOST_FOREACH(STUDENT student, students) {
                     for (int subject = 0; subject < teacher.teach_subject.size(); subject++) {
-                        if (teacher.teach_subject[subject] == 1 && student.subject[subject] > 0) {  //ある科目が指導できるか、その生徒がその教科を取っているか
+                        if (teacher.teach_subject[subject] == 1 && student.coma_of_subject_phase[phase][subject] > 0) {  //ある科目が指導できるか、その生徒がその教科を取っているか
                             if (student.nomination_teacher_id[subject].empty()) {  //講師の指定がなかった場合
                                 if (teacher.schedule[day][coma] == 1 && student.schedule[day][coma] == 1) {  //どちらのスケジュールも空いていたら
                                     //x_teacherid_studentid_subject_day_comaを生成
                                     fileout.OutputVariable(lp, "+", teacher.id, student.id, subject, day, coma);
+                                    is_output = true;
+                                    SaveWritedVariable(teacher.id, student.id, subject, day, coma);
                                 }
                             } else {  //講師の指定があった場合
                                 BOOST_FOREACH(int nominated_teacher_id, student.nomination_teacher_id[subject]) {
@@ -526,6 +831,8 @@ void ConvertMachine::GenerateTeachAverageingFomula(ofstream& lp,STUDENTS student
                                         if (teacher.schedule[day][coma] == 1 && student.schedule[day][coma] == 1) {  //どちらのスケジュールも空いていたら
                                             //x_teacherid_studentid_subject_day_comaを生成
                                             fileout.OutputVariable(lp, "+", teacher.id, student.id, subject, day, coma);
+                                            is_output = true;
+                                            SaveWritedVariable(teacher.id, student.id, subject, day, coma);
                                         }
                                     }
                                 }
@@ -535,18 +842,22 @@ void ConvertMachine::GenerateTeachAverageingFomula(ofstream& lp,STUDENTS student
                 }
             }
         }
-        fileout.OutputString(lp, "- y_M <= 0");
+        if(is_output) fileout.OutputString(lp, "- y_M <= 0");
     }
     BOOST_FOREACH(TEACHER teacher, teachers) {
-        for (int day = 0; day < piriod.size(); day++) {
+        bool is_output = false;
+        int whole_day_idx_start = PhaseToWholeDayIndex(phase);
+        for (int day = whole_day_idx_start; day < whole_day_idx_start+devide_piriod_list[phase].size(); day++) {
             for (int coma = 0; coma < teacher.schedule[day].size(); coma++) {
                 BOOST_FOREACH(STUDENT student, students) {
                     for (int subject = 0; subject < teacher.teach_subject.size(); subject++) {
-                        if (teacher.teach_subject[subject] == 1 && student.subject[subject] > 0) {  //ある科目が指導できるか、その生徒がその教科を取っているか
+                        if (teacher.teach_subject[subject] == 1 && student.coma_of_subject_phase[phase][subject] > 0) {  //ある科目が指導できるか、その生徒がその教科を取っているか
                             if (student.nomination_teacher_id[subject].empty()) {  //講師の指定がなかった場合
                                 if (teacher.schedule[day][coma] == 1 && student.schedule[day][coma] == 1) {  //どちらのスケジュールも空いていたら
                                     //x_teacherid_studentid_subject_day_comaを生成
                                     fileout.OutputVariable(lp, "+", teacher.id, student.id, subject, day, coma);
+                                    is_output = true;
+                                    SaveWritedVariable(teacher.id, student.id, subject, day, coma);
                                 }
                             } else {  //講師の指定があった場合
                                 BOOST_FOREACH(int nominated_teacher_id, student.nomination_teacher_id[subject]) {
@@ -554,6 +865,8 @@ void ConvertMachine::GenerateTeachAverageingFomula(ofstream& lp,STUDENTS student
                                         if (teacher.schedule[day][coma] == 1 && student.schedule[day][coma] == 1) {  //どちらのスケジュールも空いていたら
                                             //x_teacherid_studentid_subject_day_comaを生成
                                             fileout.OutputVariable(lp, "+", teacher.id, student.id, subject, day, coma);
+                                            is_output = true;
+                                            SaveWritedVariable(teacher.id, student.id, subject, day, coma);
                                         }
                                     }
                                 }
@@ -563,53 +876,14 @@ void ConvertMachine::GenerateTeachAverageingFomula(ofstream& lp,STUDENTS student
                 }
             }
         }
-        fileout.OutputString(lp, "- y_m >= 0");
+        if(is_output) fileout.OutputString(lp, "- y_m >= 0");
     }
 }
 
-void ConvertMachine::GenerateBinaryVariable(ofstream& lp, STUDENTS students, TEACHERS teachers) {
-    BOOST_FOREACH(TEACHER teacher, teachers) {
-        for (int day = 0; day < piriod.size(); day++) {
-            for (int coma = 0; coma < teacher.schedule[day].size(); coma++) {
-                BOOST_FOREACH(STUDENT student, students) {
-                    for (int subject = 0; subject < teacher.teach_subject.size(); subject++) {
-                        if (teacher.teach_subject[subject] == 1 && student.subject[subject] > 0) {  //ある科目が指導できるか、その生徒がその教科を取っているか
-                            if (student.nomination_teacher_id[subject].empty()) {  //講師の指定がなかった場合
-                                if (teacher.schedule[day][coma] == 1 && student.schedule[day][coma] == 1) {  //どちらのスケジュールも空いていたら
-                                    //x_teacherid_studentid_subject_day_comaを生成
-                                    fileout.OutputVariable(lp, "", teacher.id, student.id, subject, day, coma);
-                                }
-                            } else {  //講師の指定があった場合
-                                BOOST_FOREACH(int nominated_teacher_id, student.nomination_teacher_id[subject]) {
-                                    if (nominated_teacher_id == teacher.id) {  //ある生徒のある科目の指定講師だった場合
-                                        if (teacher.schedule[day][coma] == 1 && student.schedule[day][coma] == 1) {  //どちらのスケジュールも空いていたら
-                                            //x_teacherid_studentid_subject_day_comaを生成
-                                            fileout.OutputVariable(lp, "", teacher.id, student.id, subject, day, coma);
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-    BOOST_FOREACH(STUDENT student, students) {
-        if (student.grade == HIGHT) {
-            BOOST_FOREACH(TEACHER teacher, teachers) {
-                for (int subject = 0; subject < student.subject.size(); subject++) {
-                    for (int day = 0; day < piriod.size(); day++) {
-                        for (int coma = 0; coma < student.schedule[day].size(); coma++) {
-                            if (student.schedule[day][coma] == 1) {
-                                //x_teacherid_studentid_subject_day_comaを生成
-                                fileout.OutputVariable(lp, "", teacher.id, student.id, subject, day, coma);
-                            }
-                        }
-                    }
-                }
-            }
-        }
+void ConvertMachine::GenerateBinaryVariable(ofstream& lp, STUDENTS students, TEACHERS teachers, int phase) {
+    for (set<string>::iterator wv_it = writed_variable.begin(); wv_it != writed_variable.end(); ++wv_it) {
+        //        cout << *wv_it << endl;
+        fileout.OutputBinaryVariable(lp, *wv_it);
     }
     fileout.OutputString(lp, "");
 }

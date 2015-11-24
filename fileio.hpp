@@ -4,6 +4,7 @@
 #define __FILEIO_HPP
 
 #include <vector>
+#include <fstream>
 
 #include "student.hpp"
 #include "teacher.hpp"
@@ -32,7 +33,7 @@ public:
     SUBJECT_LIST subject_list;
     
     // 講師情報の読み込み
-    TEACHER InputTeacherData(string, ConvertMachine &);
+    TEACHER InputTeacherData(string, ConvertMachine &, bool);
     
 	// 生徒情報の読み込み
 	STUDENT InputStudentData(string, vector<TEACHER>);
@@ -46,11 +47,14 @@ public:
     // 文字列の出力 空白を渡すと改行
     void OutputString(ofstream &, string);
     
+    // 変数のバイナリ宣言出力
+    void OutputBinaryVariable(ofstream&, string);
+    
     // 制約式の出力
     void OutputVariable(ofstream &, string, int, int, int, int, int);
     
     // 結果の変数の読み込み
-    void InputSOLfile(RepairVeiw &);
+    void InputSOLfile(RepairVeiw &, ifstream&);
     
     // 変数解析
     void VariableAnalysis(RepairVeiw &, string);

@@ -6,6 +6,7 @@
 #include <string>
 #include <fstream>
 #include <queue>
+#include <set>
 
 #include "teacher.hpp"
 #include "student.hpp"
@@ -32,6 +33,9 @@ public:
     // 分割した講習期間のリスト
     vector<DEVIDE_PIRIOD> devide_piriod_list;
     
+    // 書き込んだ制約の変数を保管
+    set<string> writed_variable;
+    
     // 講習期間の分割
     void DevideDay();
     
@@ -50,10 +54,15 @@ public:
     // phaseでの平均指導科目数
     int CalcurateComaThreAll(STUDENT, int);
     
-    // 分割期間に閾値数分のコマを割り当て、空きコマが足りない場合できるだけ割り当てる
-    int AssignComaInFhase(STUDENT&, TEACHERS&, int, int, vector<int>&, vector<int>, int);
+    // 分割期間に閾値数分のコマを割り当て、空きコマが足りない場合できるだけ割り当てる 中学生用
+    int AssignComaInFhaseJunior(STUDENT&, TEACHERS&, int, int, vector<int>&, vector<int>, int);
     
-    void AssignRemainingComa(STUDENT&, TEACHERS&, EMPTY_RATE&, vector<int>, int);
+    //　分割期間に閾値数分のコマを割り当て、空きコマが足りない場合できるだけ割り当てる 高校生用
+    int AssignComaInFhaseHigh(STUDENT&, TEACHERS&, int, int, vector<int>&, vector<int>, int);
+    
+    void AssignRemainingComaJunior(STUDENT&, TEACHERS&, EMPTY_RATE&, vector<int>, int);
+    
+    void AssignRemainingComaHigh(STUDENT&, TEACHERS&, EMPTY_RATE&, vector<int>, int);
     
     void UpdatePhaseEmptyRate(PHASE_PRIORITY&, EMPTY_RATE);
     
@@ -67,28 +76,30 @@ public:
     int CheckRemainigComa(vector<int>);
     
     // 問題の出力
-    void GenerateLPProbrem(ofstream&, STUDENTS, TEACHERS);
+    void GenerateLPProbrem(ofstream&, STUDENTS, TEACHERS, int);
+    
+    void SaveWritedVariable(int, int, int, int, int);
     
     // 先生たちの指導回数の平均化目的関数
     void GenerateTeachAverageingFunction(ofstream&);
     
     // 講師の割り当て可能性の制約式
-	void GenerateTeacherAssignFomula(ofstream&,STUDENTS, TEACHERS);
+	void GenerateTeacherAssignFomula(ofstream&,STUDENTS, TEACHERS, int);
     
     // 生徒の割り当て可能性の制約式
-    void GenerateStudentAssignFomula(ofstream&,STUDENTS, TEACHERS);
+    void GenerateStudentAssignFomula(ofstream&,STUDENTS, TEACHERS, int);
     
     // 生徒のコマ数の制約式
-    void GenerateComaFomula(ofstream& ,STUDENTS, TEACHERS);
+    void GenerateComaFomula(ofstream& ,STUDENTS, TEACHERS, int);
     
     // 高校生のコマに対する制約式
-    void GenerateHSFomula(ofstream& ,STUDENTS, TEACHERS);
+    void GenerateHSFomula(ofstream& ,STUDENTS, TEACHERS, int);
     
     // 先生たちの指導回数の平均化制約
-    void GenerateTeachAverageingFomula(ofstream&,STUDENTS, TEACHERS);
+    void GenerateTeachAverageingFomula(ofstream&,STUDENTS, TEACHERS, int);
     
     // 変数の01変数宣言
-    void GenerateBinaryVariable(ofstream& ,STUDENTS, TEACHERS);
+    void GenerateBinaryVariable(ofstream& ,STUDENTS, TEACHERS, int);
 
 };
 

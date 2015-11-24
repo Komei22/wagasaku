@@ -12,7 +12,7 @@
 using namespace std;
 using namespace boost;
 
-TEACHER FILEIO::InputTeacherData(string filename, ConvertMachine& convert_machine) {
+TEACHER FILEIO::InputTeacherData(string filename, ConvertMachine& convert_machine, bool is_first_teacher) {
     const string inFile = "./data/teacher/"+filename;
     ifstream ifs(inFile.c_str());
     if(!ifs) {
@@ -25,7 +25,6 @@ TEACHER FILEIO::InputTeacherData(string filename, ConvertMachine& convert_machin
     vector<int> schedule_per_day;
     INPUT_STATE state = FIRST_STATE;
     while(getline(ifs, line)) {
-//        line = line+',';
         int column = 0;
         typedef tokenizer<escaped_list_separator<char> > ESC_TOKENIZER;
         ESC_TOKENIZER tokens(line);
@@ -56,7 +55,7 @@ TEACHER FILEIO::InputTeacherData(string filename, ConvertMachine& convert_machin
                 case IS_SCHEDULE:
                     column++;
                     if(*token_iter == "コマ") goto LINE_SKIP;
-                    if(teacher.id == 0 && column == 1) convert_machine.piriod.push_back(*token_iter);
+                    if(is_first_teacher && column == 1) convert_machine.piriod.push_back(*token_iter);
                     if(column > 1) {
                         if (*token_iter == "") {
                             schedule_per_day.push_back(0);
@@ -129,7 +128,7 @@ STUDENT FILEIO::InputStudentData(string filename, vector<TEACHER> teachers) {
                 student.name = *token_iter;
                 ++token_iter;
                 if(*token_iter == "高校生") {
-                    student.grade = HIGHT;
+                    student.grade = HIGH;
                 } else {
                     student.grade = JUNIOR;
                 }
@@ -232,18 +231,17 @@ void FILEIO::OutputString(ofstream& lp, string str) {
     lp << format("%s") % str << endl;
 }
 
+void FILEIO::OutputBinaryVariable(ofstream& lp, string str) {
+    lp << format("%s ") % str;
+}
+
 
 void FILEIO::OutputVariable(ofstream& lp, string oper, int teacher, int student, int subject, int day, int coma) {
     lp << format("%s x_%s_%s_%s_%s_%s ") %oper % teacher % student % subject % day % coma;
 }
 
 
-void FILEIO::InputSOLfile(RepairVeiw& repair_veiw) {
-    ifstream ifs("./sol/netz.sol");
-    if(!ifs) {
-        cout << "Error:Input data file not found :: sol" << endl;
-        exit(1);
-    }
+void FILEIO::InputSOLfile(RepairVeiw& repair_veiw, ifstream& ifs) {
     string line;
     int input_state = FIRST_STATE;
     int read_state = WAIT_VARIABLE;
