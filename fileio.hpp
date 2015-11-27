@@ -51,13 +51,18 @@ public:
     void OutputBinaryVariable(ofstream&, string);
     
     // 制約式の出力
-    void OutputVariable(ofstream &, string, int, int, int, int, int);
+    void OutputJuniorVariable(ofstream &, string, int, int, int, int, int);
+    
+    void OutputHighVariable(ofstream&, string, int, int, int, int, int, int);
     
     // 結果の変数の読み込み
     void InputSOLfile(RepairVeiw &, ifstream&);
     
-    // 変数解析
-    void VariableAnalysis(RepairVeiw &, string);
+    // 中学生の変数解析
+    void JuniorVariableAnalysis(RepairVeiw &, string);
+    
+    // 高校生の変数解析
+    void HighVariableAnalysis(RepairVeiw &, string);
 
 };
 

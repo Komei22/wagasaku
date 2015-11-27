@@ -73,6 +73,7 @@ int main() {
     
     // ソルバーで問題を解く
 //    system("./solver/glpsol --cpxlp ./lp/netz.lp -o ./sol/netz.sol");
+
     
 //    vector<RepairVeiw> repair_veiws;
 //    repair_veiws.resize(convert_machine.devide_piriod_list.size());
@@ -91,7 +92,7 @@ int main() {
 //        repair_veiws.push_back(repair_veiw);
 //        ifs.close();
 //    }
-    
+    // デバッグ用
     RepairVeiw repair_veiw;
     ifstream ifs;
     ifs.open("./sol/netz0.sol");

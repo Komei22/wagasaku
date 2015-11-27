@@ -78,7 +78,9 @@ public:
     // 問題の出力
     void GenerateLPProbrem(ofstream&, STUDENTS, TEACHERS, int);
     
-    void SaveWritedVariable(int, int, int, int, int);
+    void SaveWritedJuniorVariable(int, int, int, int, int);
+    
+    void SaveWritedHighVariable(int, int, int, int, int, int);
     
     // 先生たちの指導回数の平均化目的関数
     void GenerateTeachAverageingFunction(ofstream&);
@@ -100,6 +102,9 @@ public:
     
     // 変数の01変数宣言
     void GenerateBinaryVariable(ofstream& ,STUDENTS, TEACHERS, int);
+    
+    // 変換コマンドの実行
+    void ExecuteConvertCommand();
 
 };
 

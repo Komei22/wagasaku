@@ -210,8 +210,8 @@ int FILEIO::CheckInput(STUDENTS students, TEACHERS teachers) {
     int subject_num = teachers[0].teach_subject.size();
     for (int subject = 0; subject < subject_num; subject++) {
         BOOST_FOREACH(STUDENT student, students) {
+            if (student.subject[subject] == 0) continue;
             BOOST_FOREACH(TEACHER teacher, teachers) {
-                if (student.subject[subject] == 0) is_teaching_teacher = true;
                 if (student.subject[subject] > 0 && teacher.teach_subject[subject] == 1) { //ある生徒のある科目に対して、教える講師がいるなら
                     is_teaching_teacher = true;
                 }
@@ -236,8 +236,13 @@ void FILEIO::OutputBinaryVariable(ofstream& lp, string str) {
 }
 
 
-void FILEIO::OutputVariable(ofstream& lp, string oper, int teacher, int student, int subject, int day, int coma) {
+void FILEIO::OutputJuniorVariable(ofstream& lp, string oper, int teacher, int student, int subject, int day, int coma) {
     lp << format("%s x_%s_%s_%s_%s_%s ") %oper % teacher % student % subject % day % coma;
+}
+
+
+void FILEIO::OutputHighVariable(ofstream& lp, string oper, int teacher, int student, int subject, int day, int coma1, int coma2) {
+    lp << format("%s h_%s_%s_%s_%s_%s_%s ") %oper % teacher % student % subject % day % coma1 % coma2;
 }
 
 
@@ -263,7 +268,7 @@ void FILEIO::InputSOLfile(RepairVeiw& repair_veiw, ifstream& ifs) {
             if(input_state == READ_VARIABLE) {
                 if(read_state == WAIT_VARIABLE) {
                     variable.assign(*token_iter);
-                    if (variable[0] == 'x') read_state = CHECKING;
+                    if (variable[0] == 'x' || variable[0] == 'h') read_state = CHECKING;
                 } else if(read_state == CHECKING) {
                     if(*token_iter == "*") { //*が来たら次に0か1が来る。1が来たら読み込みの状態に移行
                         ++token_iter;
@@ -274,7 +279,11 @@ void FILEIO::InputSOLfile(RepairVeiw& repair_veiw, ifstream& ifs) {
                         }
                     }
                 } else if(read_state == READING) {
-                    VariableAnalysis(repair_veiw, variable);
+                    if (variable[0] == 'x') {
+                        JuniorVariableAnalysis(repair_veiw, variable);
+                    } else {
+                        HighVariableAnalysis(repair_veiw, variable);
+                    }
                     read_state = WAIT_VARIABLE;
                 }
             }
@@ -284,7 +293,7 @@ void FILEIO::InputSOLfile(RepairVeiw& repair_veiw, ifstream& ifs) {
 }
 
 
-void FILEIO::VariableAnalysis(RepairVeiw& repair_view,string variable) {
+void FILEIO::JuniorVariableAnalysis(RepairVeiw& repair_view,string variable) {
     typedef char_separator<char> CHAR_SEP;
     typedef tokenizer<CHAR_SEP> TOKENIZER;
     CHAR_SEP char_sep("_", "", drop_empty_tokens);
@@ -305,4 +314,39 @@ void FILEIO::VariableAnalysis(RepairVeiw& repair_view,string variable) {
     repair_view.assign.push_back(assign_inf);
 }
 
+
+void FILEIO::HighVariableAnalysis(RepairVeiw& repair_view,string variable) {
+    typedef char_separator<char> CHAR_SEP;
+    typedef tokenizer<CHAR_SEP> TOKENIZER;
+    CHAR_SEP char_sep("_", "", drop_empty_tokens);
+    TOKENIZER tokens(variable, char_sep);
+    vector<int> assign_inf_tmp;
+    for(TOKENIZER::iterator token_iter = tokens.begin(); token_iter != tokens.end(); ++token_iter) {
+        ++token_iter;
+        assign_inf_tmp.push_back(lexical_cast<int>(*token_iter));
+        ++token_iter;
+        assign_inf_tmp.push_back(lexical_cast<int>(*token_iter));
+        ++token_iter;
+        assign_inf_tmp.push_back(lexical_cast<int>(*token_iter));
+        ++token_iter;
+        assign_inf_tmp.push_back(lexical_cast<int>(*token_iter));
+        ++token_iter;
+        assign_inf_tmp.push_back(lexical_cast<int>(*token_iter));
+        ++token_iter;
+        assign_inf_tmp.push_back(lexical_cast<int>(*token_iter));
+    }
+    
+    vector<int> assign_inf1;
+    vector<int> assign_inf2;
+    for (int idx = 0; idx < assign_inf_tmp.size()-1; idx++) {
+        assign_inf1.push_back(assign_inf_tmp[idx]);
+    }
+    for (int idx = 0; idx < assign_inf_tmp.size()-2; idx++) {
+        assign_inf2.push_back(assign_inf_tmp[idx]);
+    }
+    assign_inf2.push_back(assign_inf_tmp[assign_inf_tmp.size()-1]);
+    
+    repair_view.assign.push_back(assign_inf1);
+    repair_view.assign.push_back(assign_inf2);
+}
 
