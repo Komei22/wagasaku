@@ -1,6 +1,7 @@
 // convertMachine.cpp
 #include <math.h>
 #include <sstream>
+#include <stdlib.h>
 #include <boost/lexical_cast.hpp>
 #include <boost/foreach.hpp>
 #include <boost/format.hpp>
@@ -13,6 +14,18 @@ using namespace boost;
 FILEIO fileout;
 
 #define DEVIDE_SIZE 7
+
+void ConvertMachine::SetConvertInfomation(STUDENTS& students) {
+    vector<string> piriod_list;
+    copy(piriod.begin(), piriod.end(), back_inserter(piriod_list));
+    devide_piriod_list.push_back(piriod_list);
+    
+    BOOST_FOREACH(STUDENT& student, students) {
+        vector<int> subject_list;
+        copy(student.subject.begin(), student.subject.end(), back_inserter(subject_list));
+        student.coma_of_subject_phase.push_back(subject_list);
+    }
+}
 
 void ConvertMachine::DevideDay() {
     int phase_num = ceil((double)piriod.size()/DEVIDE_SIZE);
@@ -96,11 +109,6 @@ void ConvertMachine::DistributeComaForFhase(STUDENT& student, TEACHERS& teachers
     
     vector<int> coma_num_of_subject;
     copy(student.subject.begin(), student.subject.end(), back_inserter(coma_num_of_subject));
-    
-    //            cout << "rest" << endl;
-    //            BOOST_FOREACH(int num, coma_num_of_subject) {
-    //                cout << num << ",";
-    //            }cout << endl;
     int phase_start_idx = 0;
     EMPTY_RATE empty_rate;
     // あるphaseに割り当てができるかをチェックして割り当て可能なら割り当てていく、空きコマが足りない場合は出来るだけ割り当てておく
@@ -954,6 +962,11 @@ void ConvertMachine::ExecuteConvertCommand() {
         oss << "./solver/glpsol --cpxlp ./lp/netz" << phase_idx << ".lp -o ./sol/netz" << phase_idx << ".sol";
         string command = oss.str();
         command_set.push_back(command);
+    }
+    BOOST_FOREACH(string command, command_set) {
+//        cout << command << endl;
+        system(command.c_str());
+        cout << endl;
     }
 }
 

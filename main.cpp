@@ -10,6 +10,8 @@
 #include "convertMachine.hpp"
 #include "repairVeiw.hpp"
 
+#define PIRIOD_DEVIDE 50
+
 using namespace std;
 
 using namespace boost;
@@ -53,9 +55,12 @@ int main() {
     if(fileio.CheckInput(students, teachers) == 1) return 1;
     
     // 入力ファイルの分割
-    convert_machine.DevideDay();
-    
-    convert_machine.DevideSubject(students, teachers);
+    if (convert_machine.piriod.size() < PIRIOD_DEVIDE) {  //期間が長く分割する必要があるなら
+        convert_machine.SetConvertInfomation(students);
+    } else {
+        convert_machine.DevideDay();
+        convert_machine.DevideSubject(students, teachers);
+    }
     
     // 出力用ファイル
     ofstream lp;
@@ -73,7 +78,7 @@ int main() {
     
     // ソルバーで問題を解く
 //    system("./solver/glpsol --cpxlp ./lp/netz.lp -o ./sol/netz.sol");
-
+    convert_machine.ExecuteConvertCommand();
     
 //    vector<RepairVeiw> repair_veiws;
 //    repair_veiws.resize(convert_machine.devide_piriod_list.size());

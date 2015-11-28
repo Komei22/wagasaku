@@ -36,6 +36,9 @@ public:
     // 書き込んだ制約の変数を保管
     set<string> writed_variable;
     
+    // 分割する必要がなかった場合、情報をセットする
+    void SetConvertInfomation(STUDENTS&);
+    
     // 講習期間の分割
     void DevideDay();
     
