@@ -10,7 +10,7 @@
 #include "convertMachine.hpp"
 #include "repairVeiw.hpp"
 
-#define PIRIOD_DEVIDE 50
+#define PIRIOD_DEVIDE 7
 
 using namespace std;
 
@@ -78,35 +78,34 @@ int main() {
     
     // ソルバーで問題を解く
 //    system("./solver/glpsol --cpxlp ./lp/netz.lp -o ./sol/netz.sol");
-    convert_machine.ExecuteConvertCommand();
+//    convert_machine.ExecuteConvertCommand();
     
-//    vector<RepairVeiw> repair_veiws;
-//    repair_veiws.resize(convert_machine.devide_piriod_list.size());
-//    for (int phase_idx = 0; phase_idx < convert_machine.devide_piriod_list.size(); phase_idx++) {
-//        ostringstream oss;
-//        oss << "./sol/netz" << phase_idx << ".sol";
-//        string file_path = oss.str();
-//        ifstream ifs;
-//        ifs.open(file_path);
-//        if(!ifs) {
-//            cout << "Error:Input data file not found :: sol" << endl;
-//            exit(1);
-//        }
-//        RepairVeiw repair_veiw;
-//        fileio.InputSOLfile(repair_veiw, ifs); //InputSOLfileがrepair_veiwを返すようにする
-//        repair_veiws.push_back(repair_veiw);
-//        ifs.close();
-//    }
+    // 解ファイルの読み込み
+    vector<RepairVeiw> repair_veiws;
+    for (int phase_idx = 0; phase_idx < convert_machine.devide_piriod_list.size(); phase_idx++) {
+        ostringstream oss;
+        oss << "./sol/netz" << phase_idx << ".sol";
+        string file_path = oss.str();
+        ifstream ifs;
+        ifs.open(file_path);
+        if(!ifs) {
+            cout << "Error:Input data file not found :: sol" << endl;
+            exit(1);
+        }
+        RepairVeiw repair_veiw;
+        fileio.InputSOLfile(repair_veiw, ifs);
+        repair_veiws.push_back(repair_veiw);
+        ifs.close();
+    }
+    
     // デバッグ用
-    RepairVeiw repair_veiw;
-    ifstream ifs;
-    ifs.open("./sol/netz0.sol");
-    fileio.InputSOLfile(repair_veiw, ifs);
+//    RepairVeiw repair_veiw;
+//    ifstream ifs;
+//    ifs.open("./sol/netz0.sol");
+//    fileio.InputSOLfile(repair_veiw, ifs);
     
-    // 解の読み込み
-//    fileio.InputSOLfile(repair_veiw);
     //解の解析
-    repair_veiw.DecodeSchedule(students, teachers, convert_machine);
+//    repair_veiw.DecodeSchedule(students, teachers, convert_machine);
     
     return 0;
 }

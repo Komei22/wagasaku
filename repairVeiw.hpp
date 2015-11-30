@@ -42,9 +42,9 @@ public:
     void DecodeSchedule(STUDENTS, TEACHERS, ConvertMachine);
     
     // 生徒のスケジュールの復元
-    void DecodeStudentSchedule(ofstream &, DECODE_SCHEDULE &, TEACHER, STUDENT, int, int);
+    void DecodeStudentSchedule( DECODE_SCHEDULE &, TEACHER, STUDENT, int, int);
     // 講師のスケジュールの復元
-    void DecodeTeacherSchedule(ofstream &, DECODE_SCHEDULE &, TEACHER, STUDENT, int, int);
+    void DecodeTeacherSchedule(DECODE_SCHEDULE &, TEACHER, STUDENT, int, int);
 };
 
 

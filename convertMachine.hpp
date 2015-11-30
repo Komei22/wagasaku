@@ -25,6 +25,13 @@ typedef priority_queue<pair<int, int> > SUBJECT_PRIORITY;
 
 typedef priority_queue<pair<int, int> > PHASE_PRIORITY;
 
+typedef pair<int, int> STUDENT_PRIORITY;
+typedef priority_queue<STUDENT_PRIORITY> STUDENT_PRIORITY_SET;
+
+typedef priority_queue<pair<int, int> > TEACHER_PRIORITY;
+
+typedef priority_queue<pair<int, int> > SUBJECT_PRIORITY;
+
 class ConvertMachine {
 public:
 	// 講習期間
@@ -45,8 +52,11 @@ public:
     // 分割期間中の科目のコマ数に分割
     void DevideSubject(STUDENTS&, TEACHERS&);
     
-    // 講師のphaseごとの空きコマ数をカウント
-    void CountTeacherEmptySchedule(TEACHERS&);
+    // 仮想のスケジュールの作成
+    void CreateVirtualSchedule(TEACHERS&, STUDENTS&);
+    
+    // 生徒の優先度を設定
+    void SetStudentPriority(STUDENT_PRIORITY_SET&, STUDENTS);
     
     // コマをphase毎に分配する
     void DistributeComaForFhase(STUDENT&, TEACHERS&);
@@ -63,6 +73,8 @@ public:
     //　分割期間に閾値数分のコマを割り当て、空きコマが足りない場合できるだけ割り当てる 高校生用
     int AssignComaInFhaseHigh(STUDENT&, TEACHERS&, int, int, vector<int>&, vector<int>, int);
     
+    void SetSubjectPriority(SUBJECT_PRIORITY&, vector<int>, STUDENT, TEACHERS);
+
     void AssignRemainingComaJunior(STUDENT&, TEACHERS&, EMPTY_RATE&, vector<int>, int);
     
     void AssignRemainingComaHigh(STUDENT&, TEACHERS&, EMPTY_RATE&, vector<int>, int);

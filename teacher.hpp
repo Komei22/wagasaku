@@ -31,7 +31,9 @@ public:
 
 	SCHEDULE schedule;
     
-    EMPTY_SCHEDULE_OF_PHASE empty_of_phase;
+    SCHEDULE virtual_schedule;
+    
+//    EMPTY_SCHEDULE_OF_PHASE empty_of_phase;
 
 };
 

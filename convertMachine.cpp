@@ -55,38 +55,47 @@ void ConvertMachine::DevideDay() {
 
 
 void ConvertMachine::DevideSubject(STUDENTS& students, TEACHERS& teachers) {
-    // 講師のphaseごとの空きコマ数
-    CountTeacherEmptySchedule(teachers);
-    BOOST_FOREACH(STUDENT& student, students) {
+    CreateVirtualSchedule(teachers, students);
+    // 生徒の優先度を設定
+    STUDENT_PRIORITY_SET student_priority;
+    SetStudentPriority(student_priority, students);
+    
+    while (!student_priority.empty()) {
+        int student_idx = student_priority.top().second;
+        student_priority.pop();
+        STUDENT student = students[student_idx];
         DistributeComaForFhase(student, teachers);
+        students[student_idx] = student;
     }
 }
 
-
-void ConvertMachine::CountTeacherEmptySchedule(TEACHERS& teachers) {
-    int phase_num = devide_piriod_list.size();
+void ConvertMachine::CreateVirtualSchedule(TEACHERS& teachers, STUDENTS& students) {
     BOOST_FOREACH(TEACHER& teacher, teachers) {
-        teacher.empty_of_phase.resize(phase_num, 0);
-        int coma_num = teacher.schedule[0].size();
-        int phase_start_idx = 0;
-        for (int phase = 0; phase < phase_num; phase++) {
-            for (int day_idx = phase_start_idx; day_idx < phase_start_idx+devide_piriod_list[phase].size(); day_idx++) {
-                for (int coma_idx = 0; coma_idx < coma_num; coma_idx++) {
-                    if (teacher.schedule[day_idx][coma_idx] == 1) {
-                        teacher.empty_of_phase[phase]++;
-                    }
+        copy(teacher.schedule.begin(), teacher.schedule.end(), back_inserter(teacher.virtual_schedule));
+    }
+    BOOST_FOREACH(STUDENT& student, students) {
+        copy(student.schedule.begin(), student.schedule.end(), back_inserter(student.virtual_schedule));
+    }
+}
+
+void ConvertMachine::SetStudentPriority(STUDENT_PRIORITY_SET& student_priority, STUDENTS students) {
+    int student_idx = 0;
+    BOOST_FOREACH(STUDENT student, students) {
+        int evalution = 100000;
+        // スケジューリングの可能性が少ない人ほど優先度　高
+        for (int day_idx = 0; day_idx < piriod.size(); day_idx++) {
+            for (int coma_idx = 0; coma_idx < student.schedule[day_idx].size(); coma_idx++) {
+                if (student.schedule[day_idx][coma_idx] == 1) {
+                    evalution--;
                 }
             }
-            phase_start_idx += devide_piriod_list[phase].size();
         }
+        if (student.grade == HIGH) { //高校生は優先度　高
+            evalution = evalution + 1000;
+        }
+        student_priority.push(make_pair(evalution, student_idx));
+        student_idx++;
     }
-    // デバッグ用
-    //    BOOST_FOREACH(TEACHER teacher, teachers) {
-    //        cout << teacher.name << endl;
-    //        BOOST_FOREACH(int num, teacher.empty_of_phase) {
-    //            cout << num << ",";
-    //        }cout << endl;
-    //    }
 }
 
 
@@ -174,22 +183,10 @@ int ConvertMachine::CalcurateComaThreAll(STUDENT student, int phase_num) {
 
 
 int ConvertMachine::AssignComaInFhaseJunior(STUDENT& student, TEACHERS& teachers, int phase_start_idx, int phase, vector<int> &coma_num_of_subject, vector<int> coma_thre_of_subject, int coma_thre_of_all) {
-    int subject_num = student.subject.size();
     int coma_num = student.schedule[0].size();
-    // 生徒の最初に探索される教科
-    int first_search_subject;
-    for (int subject = 0; subject < subject_num; subject++) {
-        if(student.subject[subject] != 0){
-            first_search_subject = subject;
-            break;
-        }
-    }
     // 科目の優先度の設定
-    typedef priority_queue<pair<int, int> > SUBJECT_PRIORITY;
     SUBJECT_PRIORITY subject_priority;
-    for (int subject = 0; subject < subject_num; subject++) {
-        subject_priority.push(make_pair(coma_num_of_subject[subject], subject));
-    }
+    SetSubjectPriority(subject_priority, coma_num_of_subject, student, teachers);
     
     // コマの割り当て
     int empty_shcedule_num = 0;
@@ -204,14 +201,14 @@ int ConvertMachine::AssignComaInFhaseJunior(STUDENT& student, TEACHERS& teachers
                     BOOST_FOREACH(TEACHER& teacher, teachers) {
                         if (nominate_teacher_id == teacher.id) {
                             for (int coma_idx = 0; coma_idx < coma_num; coma_idx++) {
-                                if (student.schedule[day_idx][coma_idx] ==1 && teacher.schedule[day_idx][coma_idx] == 1) {
-                                    if(subject_idx == first_search_subject) empty_shcedule_num++;
-                                    if (teacher.empty_of_phase[phase] == 0 || total_assign_num == coma_thre_of_all) break;
+                                if (student.schedule[day_idx][coma_idx] ==1 && teacher.virtual_schedule[day_idx][coma_idx] == 1) {
+                                    empty_shcedule_num++;
+                                    if (total_assign_num == coma_thre_of_all) break;
                                     if (student.coma_of_subject_phase[phase][subject_idx] < coma_thre_of_subject[subject_idx]) {
                                         student.coma_of_subject_phase[phase][subject_idx]++;
+                                        teacher.virtual_schedule[day_idx][coma_idx] = 0;
                                         total_assign_num++;
                                         empty_shcedule_num--;
-                                        teacher.empty_of_phase[phase]--;
                                         coma_num_of_subject[subject_idx]--;
                                     } else {
                                         break;
@@ -224,14 +221,14 @@ int ConvertMachine::AssignComaInFhaseJunior(STUDENT& student, TEACHERS& teachers
             } else {
                 BOOST_FOREACH(TEACHER& teacher, teachers) {
                     for (int coma_idx = 0; coma_idx < coma_num; coma_idx++) {
-                        if (student.schedule[day_idx][coma_idx] ==1 && teacher.schedule[day_idx][coma_idx] == 1) {
-                            if(subject_idx == first_search_subject) empty_shcedule_num++;
-                            if (teacher.empty_of_phase[phase] == 0 || total_assign_num == coma_thre_of_all) break;
+                        if (student.schedule[day_idx][coma_idx] ==1 && teacher.virtual_schedule[day_idx][coma_idx] == 1) {
+                            empty_shcedule_num++;
+                            if (total_assign_num == coma_thre_of_all) break;
                             if (student.coma_of_subject_phase[phase][subject_idx] < coma_thre_of_subject[subject_idx]) {
                                 student.coma_of_subject_phase[phase][subject_idx]++;
+                                teacher.virtual_schedule[day_idx][coma_idx] = 0;
                                 total_assign_num++;
                                 empty_shcedule_num--;
-                                teacher.empty_of_phase[phase]--;
                                 coma_num_of_subject[subject_idx]--;
                             } else {
                                 break;
@@ -247,22 +244,10 @@ int ConvertMachine::AssignComaInFhaseJunior(STUDENT& student, TEACHERS& teachers
 
 
 int ConvertMachine::AssignComaInFhaseHigh(STUDENT& student, TEACHERS& teachers, int phase_start_idx, int phase, vector<int> &coma_num_of_subject, vector<int> coma_thre_of_subject, int coma_thre_of_all) {
-    int subject_num = student.subject.size();
     int coma_num = student.schedule[0].size();
-    // 生徒の最初に探索される教科
-    int first_search_subject;
-    for (int subject = 0; subject < subject_num; subject++) {
-        if(student.subject[subject] != 0){
-            first_search_subject = subject;
-            break;
-        }
-    }
     // 科目の優先度の設定
-    typedef priority_queue<pair<int, int> > SUBJECT_PRIORITY;
     SUBJECT_PRIORITY subject_priority;
-    for (int subject = 0; subject < subject_num; subject++) {
-        subject_priority.push(make_pair(coma_num_of_subject[subject], subject));
-    }
+    SetSubjectPriority(subject_priority, coma_num_of_subject, student, teachers);
     
     // コマの割り当て
     int empty_shcedule_num = 0;
@@ -278,14 +263,17 @@ int ConvertMachine::AssignComaInFhaseHigh(STUDENT& student, TEACHERS& teachers, 
                         if (nominate_teacher_id == teacher.id) {
                             for (int coma_idx = 0; coma_idx < coma_num; coma_idx++) {
                                 if (coma_idx == coma_num-1) break;
-                                if (student.schedule[day_idx][coma_idx] ==1 && teacher.schedule[day_idx][coma_idx] == 1 && student.schedule[day_idx][coma_idx+1] == 1 && teacher.schedule[day_idx][coma_idx+1] == 1) {
-                                    if(subject_idx == first_search_subject) empty_shcedule_num++;
-                                    if (teacher.empty_of_phase[phase] == 0 || total_assign_num == coma_thre_of_all) break;
+                                if (student.virtual_schedule[day_idx][coma_idx] ==1 && teacher.virtual_schedule[day_idx][coma_idx] == 1 && student.virtual_schedule[day_idx][coma_idx+1] == 1 && teacher.virtual_schedule[day_idx][coma_idx+1] == 1) {
+                                    empty_shcedule_num++;
+                                    if (total_assign_num == coma_thre_of_all) break;
                                     if (student.coma_of_subject_phase[phase][subject_idx] < coma_thre_of_subject[subject_idx]) {
                                         student.coma_of_subject_phase[phase][subject_idx]++;
+                                        teacher.virtual_schedule[day_idx][coma_idx] = 0;
+                                        teacher.virtual_schedule[day_idx][coma_idx+1] = 0;
+                                        student.virtual_schedule[day_idx][coma_idx] = 0;
+                                        student.virtual_schedule[day_idx][coma_idx+1] = 0;
                                         total_assign_num++;
                                         empty_shcedule_num--;
-                                        teacher.empty_of_phase[phase]--;teacher.empty_of_phase[phase]--;
                                         coma_num_of_subject[subject_idx]--;
                                     } else {
                                         break;
@@ -299,14 +287,17 @@ int ConvertMachine::AssignComaInFhaseHigh(STUDENT& student, TEACHERS& teachers, 
                 BOOST_FOREACH(TEACHER& teacher, teachers) {
                     for (int coma_idx = 0; coma_idx < coma_num; coma_idx++) {
                         if (coma_idx == coma_num-1) break;
-                        if (student.schedule[day_idx][coma_idx] ==1 && teacher.schedule[day_idx][coma_idx] == 1 && student.schedule[day_idx][coma_idx+1] == 1 && teacher.schedule[day_idx][coma_idx+1] == 1) {
-                            if(subject_idx == first_search_subject) empty_shcedule_num++;
-                            if (teacher.empty_of_phase[phase] == 0 || total_assign_num == coma_thre_of_all) break;
+                        if (student.schedule[day_idx][coma_idx] ==1 && teacher.virtual_schedule[day_idx][coma_idx] == 1 && student.schedule[day_idx][coma_idx+1] == 1 && teacher.virtual_schedule[day_idx][coma_idx+1] == 1) {
+                            empty_shcedule_num++;
+                            if (total_assign_num == coma_thre_of_all) break;
                             if (student.coma_of_subject_phase[phase][subject_idx] < coma_thre_of_subject[subject_idx]) {
                                 student.coma_of_subject_phase[phase][subject_idx]++;
+                                teacher.virtual_schedule[day_idx][coma_idx] = 0;
+                                teacher.virtual_schedule[day_idx][coma_idx+1] = 0;
+                                student.virtual_schedule[day_idx][coma_idx] = 0;
+                                student.virtual_schedule[day_idx][coma_idx+1] = 0;
                                 total_assign_num++;
                                 empty_shcedule_num--;
-                                teacher.empty_of_phase[phase]--;teacher.empty_of_phase[phase]--;
                                 coma_num_of_subject[subject_idx]--;
                             } else {
                                 break;
@@ -318,6 +309,43 @@ int ConvertMachine::AssignComaInFhaseHigh(STUDENT& student, TEACHERS& teachers, 
         }
     }
     return empty_shcedule_num;
+}
+
+
+void ConvertMachine::SetSubjectPriority(SUBJECT_PRIORITY& subject_priority, vector<int> coma_num_of_subject, STUDENT student, TEACHERS teachers) {
+    int subject_num = student.subject.size();
+    int evalution = 1000;
+    for (int subject = 0; subject < subject_num; subject++) {
+        evalution = coma_num_of_subject[subject];
+        int empty_num_subject = 0;
+        if (!student.nomination_teacher_id.empty()) {
+            BOOST_FOREACH(int nominated_teacher_id, student.nomination_teacher_id[subject]) {
+                BOOST_FOREACH(TEACHER teacher, teachers) {
+                    if (teacher.id == nominated_teacher_id) {
+                        if (student.grade == HIGH) {
+                            for (int day = 0; day < piriod.size(); day++) {
+                                for (int coma = 0; coma < teacher.schedule[day].size(); coma++) {
+                                    if (teacher.virtual_schedule[day][coma] == 1 && student.virtual_schedule[day][coma] == 1 && teacher.virtual_schedule[day][coma+1] == 1 && student.virtual_schedule[day][coma+1] == 1) {
+                                        empty_num_subject++;
+                                    }
+                                }
+                            }
+                        } else {
+                            for (int day = 0; day < piriod.size(); day++) {
+                                for (int coma = 0; coma < teacher.schedule[day].size(); coma++) {
+                                    if (teacher.virtual_schedule[day][coma] == 1 && student.virtual_schedule[day][coma] == 1 && teacher.virtual_schedule[day][coma+1] == 1) {
+                                        empty_num_subject++;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        evalution -= empty_num_subject;
+        subject_priority.push(make_pair(evalution, subject));
+    }
 }
 
 
@@ -364,24 +392,22 @@ void ConvertMachine::AssignRemainingComaJunior(STUDENT& student, TEACHERS& teach
         while (!phase_priority.empty()) {
             int phase = phase_priority.top().second;
             phase_priority.pop();
-            //        cout << "phase:" << phase << endl;
             while (!subject_priority.empty()) {
                 int subject_idx = subject_priority.top().second;
                 subject_priority.pop();
-                //            cout << "subject:" << subject_idx << endl;
                 int whole_day_idx_start = PhaseToWholeDayIndex(phase);
                 for (int whole_day_idx = whole_day_idx_start; whole_day_idx < whole_day_idx_start+devide_piriod_list[phase].size(); whole_day_idx++) {
                     for (int coma_idx = 0; coma_idx < coma_num; coma_idx++) {
                         if (!student.nomination_teacher_id[subject_idx].empty()) {
                             BOOST_FOREACH(int nominate_teacher_id, student.nomination_teacher_id[subject_idx]) {
-                                BOOST_FOREACH(TEACHER teacher, teachers) {
+                                BOOST_FOREACH(TEACHER& teacher, teachers) {
                                     if (teacher.id == nominate_teacher_id) {
-                                        if (student.schedule[whole_day_idx][coma_idx] == 1 && teacher.schedule[whole_day_idx][coma_idx] == 1) {
-                                            if (total_coma_num_phase[phase] >= coma_thre_of_all || teacher.empty_of_phase[phase] == 0) break;
+                                        if (student.schedule[whole_day_idx][coma_idx] == 1 && teacher.virtual_schedule[whole_day_idx][coma_idx] == 1) {
+                                            if (total_coma_num_phase[phase] >= coma_thre_of_all) break;
                                             if (coma_num_of_subject[subject_idx] == 0) break;
                                             student.coma_of_subject_phase[phase][subject_idx]++;
+                                            teacher.virtual_schedule[whole_day_idx][coma_idx] = 0;
                                             coma_num_of_subject[subject_idx]--;
-                                            teacher.empty_of_phase[phase]--;
                                             empty_rate[phase].first--;
                                             total_coma_num_phase[phase]++;
                                         }
@@ -389,13 +415,13 @@ void ConvertMachine::AssignRemainingComaJunior(STUDENT& student, TEACHERS& teach
                                 }
                             }
                         } else {
-                            BOOST_FOREACH(TEACHER teacher, teachers) {
-                                if (student.schedule[whole_day_idx][coma_idx] == 1 && teacher.schedule[whole_day_idx][coma_idx] == 1) {
-                                    if (total_coma_num_phase[phase] >= coma_thre_of_all || teacher.empty_of_phase[phase] == 0) break;
+                            BOOST_FOREACH(TEACHER& teacher, teachers) {
+                                if (student.schedule[whole_day_idx][coma_idx] == 1 && teacher.virtual_schedule[whole_day_idx][coma_idx] == 1) {
+                                    if (total_coma_num_phase[phase] >= coma_thre_of_all) break;
                                     if (coma_num_of_subject[subject_idx] == 0) break;
                                     student.coma_of_subject_phase[phase][subject_idx]++;
+                                    teacher.virtual_schedule[whole_day_idx][coma_idx] = 0;
                                     coma_num_of_subject[subject_idx]--;
-                                    teacher.empty_of_phase[phase]--;
                                     empty_rate[phase].first--;
                                     total_coma_num_phase[phase]++;
                                 }
@@ -456,25 +482,26 @@ void ConvertMachine::AssignRemainingComaHigh(STUDENT& student, TEACHERS& teacher
         while (!phase_priority.empty()) {
             int phase = phase_priority.top().second;
             phase_priority.pop();
-            //        cout << "phase:" << phase << endl;
             while (!subject_priority.empty()) {
                 int subject_idx = subject_priority.top().second;
                 subject_priority.pop();
-                //            cout << "subject:" << subject_idx << endl;
                 int whole_day_idx_start = PhaseToWholeDayIndex(phase);
                 for (int whole_day_idx = whole_day_idx_start; whole_day_idx < whole_day_idx_start+devide_piriod_list[phase].size(); whole_day_idx++) {
                     for (int coma_idx = 0; coma_idx < coma_num; coma_idx++) {
                         if (coma_idx == coma_num-1) break;
                         if (!student.nomination_teacher_id[subject_idx].empty()) {
                             BOOST_FOREACH(int nominate_teacher_id, student.nomination_teacher_id[subject_idx]) {
-                                BOOST_FOREACH(TEACHER teacher, teachers) {
+                                BOOST_FOREACH(TEACHER& teacher, teachers) {
                                     if (teacher.id == nominate_teacher_id) {
-                                        if (student.schedule[whole_day_idx][coma_idx] == 1 && teacher.schedule[whole_day_idx][coma_idx] == 1 && student.schedule[whole_day_idx][coma_idx+1] == 1 && teacher.schedule[whole_day_idx][coma_idx+1] == 1) {
-                                            if (total_coma_num_phase[phase] >= coma_thre_of_all || teacher.empty_of_phase[phase] == 0) break;
+                                        if (student.virtual_schedule[whole_day_idx][coma_idx] == 1 && teacher.virtual_schedule[whole_day_idx][coma_idx] == 1 && student.virtual_schedule[whole_day_idx][coma_idx+1] == 1 && teacher.virtual_schedule[whole_day_idx][coma_idx+1] == 1) {
+                                            if (total_coma_num_phase[phase] >= coma_thre_of_all) break;
                                             if (coma_num_of_subject[subject_idx] == 0) break;
                                             student.coma_of_subject_phase[phase][subject_idx]++;
+                                            teacher.virtual_schedule[whole_day_idx][coma_idx] = 0;
+                                            teacher.virtual_schedule[whole_day_idx][coma_idx+1] = 0;
+                                            student.virtual_schedule[whole_day_idx][coma_idx] = 0;
+                                            student.virtual_schedule[whole_day_idx][coma_idx+1] = 0;
                                             coma_num_of_subject[subject_idx]--;
-                                            teacher.empty_of_phase[phase]--;teacher.empty_of_phase[phase]--;
                                             empty_rate[phase].first--;
                                             total_coma_num_phase[phase]++;
                                         }
@@ -482,13 +509,16 @@ void ConvertMachine::AssignRemainingComaHigh(STUDENT& student, TEACHERS& teacher
                                 }
                             }
                         } else {
-                            BOOST_FOREACH(TEACHER teacher, teachers) {
-                                if (student.schedule[whole_day_idx][coma_idx] == 1 && teacher.schedule[whole_day_idx][coma_idx] == 1 && student.schedule[whole_day_idx][coma_idx+1] == 1 && teacher.schedule[whole_day_idx][coma_idx+1] == 1) {
-                                    if (total_coma_num_phase[phase] >= coma_thre_of_all || teacher.empty_of_phase[phase] == 0) break;
+                            BOOST_FOREACH(TEACHER& teacher, teachers) {
+                                if (student.virtual_schedule[whole_day_idx][coma_idx] == 1 && teacher.virtual_schedule[whole_day_idx][coma_idx] == 1 && student.virtual_schedule[whole_day_idx][coma_idx+1] == 1 && teacher.virtual_schedule[whole_day_idx][coma_idx+1] == 1) {
+                                    if (total_coma_num_phase[phase] >= coma_thre_of_all) break;
                                     if (coma_num_of_subject[subject_idx] == 0) break;
                                     student.coma_of_subject_phase[phase][subject_idx]++;
+                                    teacher.virtual_schedule[whole_day_idx][coma_idx] = 0;
+                                    teacher.virtual_schedule[whole_day_idx][coma_idx+1] = 0;
+                                    student.virtual_schedule[whole_day_idx][coma_idx] = 0;
+                                    student.virtual_schedule[whole_day_idx][coma_idx+1] = 0;
                                     coma_num_of_subject[subject_idx]--;
-                                    teacher.empty_of_phase[phase]--;teacher.empty_of_phase[phase]--;
                                     empty_rate[phase].first--;
                                     total_coma_num_phase[phase]++;
                                 }
@@ -497,12 +527,21 @@ void ConvertMachine::AssignRemainingComaHigh(STUDENT& student, TEACHERS& teacher
                     }
                 }
             }
-            //            BOOST_FOREACH(int num, coma_num_of_subject) {
-            //                cout << num;
-            //            }cout << endl;
+            //                        BOOST_FOREACH(int num, coma_num_of_subject) {
+            //                            cout << num;
+            //                        }cout << endl;
             if(CheckRemainigComa(coma_num_of_subject)) break;
             UpdateSubjectPriority(subject_priority, coma_num_of_subject, subject_num);
         }
+        //            cout << "virtual" << endl;
+        //            BOOST_FOREACH(TEACHER teacher, teachers) {
+        //                for (int day_idx = 0; day_idx < piriod.size(); day_idx++) {
+        //                    cout << piriod[day_idx] << endl;
+        //                    for (int coma_idx = 0; coma_idx < coma_num; coma_idx++) {
+        //                        cout << student.virtual_schedule[day_idx][coma_idx];
+        //                    }cout << endl;
+        //                }
+        //            }
     }
 }
 
@@ -964,7 +1003,7 @@ void ConvertMachine::ExecuteConvertCommand() {
         command_set.push_back(command);
     }
     BOOST_FOREACH(string command, command_set) {
-//        cout << command << endl;
+        //        cout << command << endl;
         system(command.c_str());
         cout << endl;
     }

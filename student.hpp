@@ -49,6 +49,8 @@ public:
     vector<SUBJECT_CLASS_NUM> coma_of_subject_phase;
 
 	SCHEDULE schedule;
+    
+    SCHEDULE virtual_schedule;
 
 	NOMINATION_TEACHER_ID nomination_teacher_id;
 

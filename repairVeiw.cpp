@@ -53,7 +53,7 @@ void RepairVeiw::DecodeSchedule(STUDENTS students, TEACHERS teachers, ConvertMac
         for (int day = 0; day < piriod_num; day++) {
             for (int coma = 0; coma < coma_num; coma++) {
                 BOOST_FOREACH(TEACHER teacher, teachers) {
-                    DecodeStudentSchedule(csv, schedule, teacher, student, day, coma);
+                    DecodeStudentSchedule(schedule, teacher, student, day, coma);
                 }
             }
         }
@@ -76,7 +76,7 @@ void RepairVeiw::DecodeSchedule(STUDENTS students, TEACHERS teachers, ConvertMac
         for (int day = 0; day < piriod_num; day++) {
             for (int coma = 0; coma < coma_num; coma++) {
                 BOOST_FOREACH(STUDENT student, students) {
-                    DecodeTeacherSchedule(csv, schedule, teacher, student, day, coma);
+                    DecodeTeacherSchedule(schedule, teacher, student, day, coma);
                 }
             }
         }
@@ -93,7 +93,7 @@ void RepairVeiw::DecodeSchedule(STUDENTS students, TEACHERS teachers, ConvertMac
 }
 
 
-void RepairVeiw::DecodeStudentSchedule(ofstream& csv, DECODE_SCHEDULE& schedule, TEACHER teacher, STUDENT student, int day, int coma) {
+void RepairVeiw::DecodeStudentSchedule(DECODE_SCHEDULE& schedule, TEACHER teacher, STUDENT student, int day, int coma) {
     BOOST_FOREACH(ASSIGN_INF assign_inf, assign) {
         if (assign_inf[TEACHER_ID] == teacher.id && assign_inf[STUDENT_ID] == student.id && assign_inf[DAY] == day && assign_inf[COMA] == coma) {
             string output_str;
@@ -104,7 +104,7 @@ void RepairVeiw::DecodeStudentSchedule(ofstream& csv, DECODE_SCHEDULE& schedule,
 }
 
 
-void RepairVeiw::DecodeTeacherSchedule(ofstream& csv, DECODE_SCHEDULE& schedule, TEACHER teacher, STUDENT student, int day, int coma) {
+void RepairVeiw::DecodeTeacherSchedule(DECODE_SCHEDULE& schedule, TEACHER teacher, STUDENT student, int day, int coma) {
     BOOST_FOREACH(ASSIGN_INF assign_inf, assign) {
         if (assign_inf[TEACHER_ID] == teacher.id && assign_inf[STUDENT_ID] == student.id && assign_inf[DAY] == day && assign_inf[COMA] == coma) {
             string output_str;
