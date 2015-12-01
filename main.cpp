@@ -9,6 +9,7 @@
 #include "fileio.hpp"
 #include "convertMachine.hpp"
 #include "repairVeiw.hpp"
+#include "solution.hpp"
 
 #define PIRIOD_DEVIDE 7
 
@@ -63,25 +64,25 @@ int main() {
     }
     
     // 出力用ファイル
-    ofstream lp;
-    vector<string> file_path_set;
-    for (int phase_idx = 0; phase_idx < convert_machine.devide_piriod_list.size(); phase_idx++) {
-        ostringstream oss;
-        oss << "./lp/netz" << phase_idx << ".lp";
-        string file_path = oss.str();
-        file_path_set.push_back(file_path);
-        lp.open(file_path);
-        // 各ファイルに分割された問題を記述
-        convert_machine.GenerateLPProbrem(lp, students, teachers, phase_idx);
-        lp.close();
-    }
+//    ofstream lp;
+//    vector<string> file_path_set;
+//    for (int phase_idx = 0; phase_idx < convert_machine.devide_piriod_list.size(); phase_idx++) {
+//        ostringstream oss;
+//        oss << "./lp/netz" << phase_idx << ".lp";
+//        string file_path = oss.str();
+//        file_path_set.push_back(file_path);
+//        lp.open(file_path);
+//        // 各ファイルに分割された問題を記述
+//        convert_machine.GenerateLPProbrem(lp, students, teachers, phase_idx);
+//        lp.close();
+//    }
     
     // ソルバーで問題を解く
 //    system("./solver/glpsol --cpxlp ./lp/netz.lp -o ./sol/netz.sol");
 //    convert_machine.ExecuteConvertCommand();
     
     // 解ファイルの読み込み
-    vector<RepairVeiw> repair_veiws;
+    vector<Solution> assign_phase;
     for (int phase_idx = 0; phase_idx < convert_machine.devide_piriod_list.size(); phase_idx++) {
         ostringstream oss;
         oss << "./sol/netz" << phase_idx << ".sol";
@@ -92,11 +93,22 @@ int main() {
             cout << "Error:Input data file not found :: sol" << endl;
             exit(1);
         }
-        RepairVeiw repair_veiw;
-        fileio.InputSOLfile(repair_veiw, ifs);
-        repair_veiws.push_back(repair_veiw);
+        Solution assign;
+        fileio.InputSOLfile(assign, ifs);
+        assign_phase.push_back(assign);
         ifs.close();
     }
+// デバッグ用
+//    int phase = 0;
+//    BOOST_FOREACH(Solution solution, assign_phase) {
+//        cout << phase << endl;
+//        BOOST_FOREACH(vector<int> variable, solution.assign) {
+//            BOOST_FOREACH(int element, variable) {
+//                cout << element << " ";
+//            }cout << endl;
+//        }
+//        phase++;
+//    }
     
     // デバッグ用
 //    RepairVeiw repair_veiw;
@@ -105,7 +117,11 @@ int main() {
 //    fileio.InputSOLfile(repair_veiw, ifs);
     
     //解の解析
-//    repair_veiw.DecodeSchedule(students, teachers, convert_machine);
+    RepairVeiw repair_veiw;
+    int coma_num = students[0].schedule[0].size();
+    repair_veiw.InitializeStudentCSV(students, coma_num);
+    repair_veiw.InitializeTeacherCSV(teachers, coma_num);
+    repair_veiw.DecodeSchedule(students, teachers, convert_machine, assign_phase);
     
     return 0;
 }

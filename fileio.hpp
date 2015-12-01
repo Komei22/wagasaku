@@ -10,6 +10,7 @@
 #include "teacher.hpp"
 #include "convertMachine.hpp"
 #include "repairVeiw.hpp"
+#include "solution.hpp"
 
 typedef int INPUT_STATE;
 const INPUT_STATE FIRST_STATE = -1;
@@ -56,13 +57,13 @@ public:
     void OutputHighVariable(ofstream&, string, int, int, int, int, int, int);
     
     // 結果の変数の読み込み
-    void InputSOLfile(RepairVeiw &, ifstream&);
+    void InputSOLfile(Solution &, ifstream&);
     
     // 中学生の変数解析
-    void JuniorVariableAnalysis(RepairVeiw &, string);
+    void JuniorVariableAnalysis(Solution &, string);
     
     // 高校生の変数解析
-    void HighVariableAnalysis(RepairVeiw &, string);
+    void HighVariableAnalysis(Solution &, string);
 
 };
 

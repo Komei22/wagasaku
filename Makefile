@@ -20,7 +20,7 @@ clean:
 $(EXENAME): $(ALL_CXX_OBJ_FILES) $(ALL_C_OBJ_FILES) 
 	$(CXX) $(CXXFLAGS) -o $@ $(ALL_CXX_OBJ_FILES) $(ALL_C_OBJ_FILES) $(LFLAGS)
 
-main.o: fileio.hpp convertMachine.hpp student.hpp teacher.hpp repairVeiw.hpp
-counvertMachine.o: fileio.hpp convertMachine.hpp student.hpp teacher.hpp repairVeiw.hpp
-fileio.o: fileio.hpp convertMachine.hpp student.hpp teacher.hpp repairVeiw.hpp
-repairVeiw.o: fileio.hpp convertMachine.hpp student.hpp teacher.hpp repairVeiw.hpp
+main.o: fileio.hpp convertMachine.hpp student.hpp teacher.hpp repairVeiw.hpp solution.hpp
+counvertMachine.o: fileio.hpp convertMachine.hpp student.hpp teacher.hpp repairVeiw.hpp solution.hpp
+fileio.o: fileio.hpp convertMachine.hpp student.hpp teacher.hpp repairVeiw.hpp solution.hpp
+repairVeiw.o: fileio.hpp convertMachine.hpp student.hpp teacher.hpp repairVeiw.hpp solution.hpp

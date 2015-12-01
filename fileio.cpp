@@ -246,7 +246,7 @@ void FILEIO::OutputHighVariable(ofstream& lp, string oper, int teacher, int stud
 }
 
 
-void FILEIO::InputSOLfile(RepairVeiw& repair_veiw, ifstream& ifs) {
+void FILEIO::InputSOLfile(Solution& solution, ifstream& ifs) {
     string line;
     int input_state = FIRST_STATE;
     int read_state = WAIT_VARIABLE;
@@ -280,9 +280,9 @@ void FILEIO::InputSOLfile(RepairVeiw& repair_veiw, ifstream& ifs) {
                     }
                 } else if(read_state == READING) {
                     if (variable[0] == 'x') {
-                        JuniorVariableAnalysis(repair_veiw, variable);
+                        JuniorVariableAnalysis(solution, variable);
                     } else {
-                        HighVariableAnalysis(repair_veiw, variable);
+                        HighVariableAnalysis(solution, variable);
                     }
                     read_state = WAIT_VARIABLE;
                 }
@@ -293,7 +293,7 @@ void FILEIO::InputSOLfile(RepairVeiw& repair_veiw, ifstream& ifs) {
 }
 
 
-void FILEIO::JuniorVariableAnalysis(RepairVeiw& repair_view,string variable) {
+void FILEIO::JuniorVariableAnalysis(Solution& solution,string variable) {
     typedef char_separator<char> CHAR_SEP;
     typedef tokenizer<CHAR_SEP> TOKENIZER;
     CHAR_SEP char_sep("_", "", drop_empty_tokens);
@@ -311,11 +311,11 @@ void FILEIO::JuniorVariableAnalysis(RepairVeiw& repair_view,string variable) {
         ++token_iter;
         assign_inf.push_back(lexical_cast<int>(*token_iter));
     }
-    repair_view.assign.push_back(assign_inf);
+    solution.assign.push_back(assign_inf);
 }
 
 
-void FILEIO::HighVariableAnalysis(RepairVeiw& repair_view,string variable) {
+void FILEIO::HighVariableAnalysis(Solution& solution,string variable) {
     typedef char_separator<char> CHAR_SEP;
     typedef tokenizer<CHAR_SEP> TOKENIZER;
     CHAR_SEP char_sep("_", "", drop_empty_tokens);
@@ -346,7 +346,7 @@ void FILEIO::HighVariableAnalysis(RepairVeiw& repair_view,string variable) {
     }
     assign_inf2.push_back(assign_inf_tmp[assign_inf_tmp.size()-1]);
     
-    repair_view.assign.push_back(assign_inf1);
-    repair_view.assign.push_back(assign_inf2);
+    solution.assign.push_back(assign_inf1);
+    solution.assign.push_back(assign_inf2);
 }
 
