@@ -54,34 +54,41 @@ int main() {
     
     // 入力ファイルのチェック
     if(fileio.CheckInput(students, teachers) == 1) return 1;
+    cout << "Finish file input" << endl;
+    
     
     // 入力ファイルの分割
     if (convert_machine.piriod.size() < PIRIOD_DEVIDE) {  //期間が長く分割する必要があるなら
+        cout << "Generate no divide problem ..." << endl;
         convert_machine.SetConvertInfomation(students);
     } else {
+        cout << "Generate devide problem ..." << endl;
         convert_machine.DevideDay();
         convert_machine.DevideSubject(students, teachers);
+        
     }
     
-    // 出力用ファイル
-//    ofstream lp;
-//    vector<string> file_path_set;
-//    for (int phase_idx = 0; phase_idx < convert_machine.devide_piriod_list.size(); phase_idx++) {
-//        ostringstream oss;
-//        oss << "./lp/netz" << phase_idx << ".lp";
-//        string file_path = oss.str();
-//        file_path_set.push_back(file_path);
-//        lp.open(file_path);
-//        // 各ファイルに分割された問題を記述
-//        convert_machine.GenerateLPProbrem(lp, students, teachers, phase_idx);
-//        lp.close();
-//    }
+    // 問題の生成
+    cout << "Output LP probrem ..." << endl;
+    ofstream lp;
+    vector<string> file_path_set;
+    for (int phase_idx = 0; phase_idx < convert_machine.devide_piriod_list.size(); phase_idx++) {
+        ostringstream oss;
+        oss << "./lp/netz" << phase_idx << ".lp";
+        string file_path = oss.str();
+        file_path_set.push_back(file_path);
+        lp.open(file_path);
+        // 各ファイルに分割された問題を記述
+        convert_machine.GenerateLPProbrem(lp, students, teachers, phase_idx);
+        lp.close();
+    }
     
     // ソルバーで問題を解く
 //    system("./solver/glpsol --cpxlp ./lp/netz.lp -o ./sol/netz.sol");
 //    convert_machine.ExecuteConvertCommand();
     
     // 解ファイルの読み込み
+    cout << "Input solution file ..." << endl;
     vector<Solution> assign_phase;
     for (int phase_idx = 0; phase_idx < convert_machine.devide_piriod_list.size(); phase_idx++) {
         ostringstream oss;
@@ -98,6 +105,7 @@ int main() {
         assign_phase.push_back(assign);
         ifs.close();
     }
+    
 // デバッグ用
 //    int phase = 0;
 //    BOOST_FOREACH(Solution solution, assign_phase) {
@@ -117,11 +125,13 @@ int main() {
 //    fileio.InputSOLfile(repair_veiw, ifs);
     
     //解の解析
+    cout << "Analysis Soluton" << endl;
     RepairVeiw repair_veiw;
     int coma_num = students[0].schedule[0].size();
     repair_veiw.InitializeStudentCSV(students, coma_num);
     repair_veiw.InitializeTeacherCSV(teachers, coma_num);
     repair_veiw.DecodeSchedule(students, teachers, convert_machine, assign_phase);
+    cout << "output schedule" << endl;
     
     return 0;
 }

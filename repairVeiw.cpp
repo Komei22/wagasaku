@@ -18,10 +18,32 @@ void RepairVeiw::InitializeSubjectName() {
 }
 
 
-void RepairVeiw::InitializeSchedule(DECODE_SCHEDULE& schedule, int coma_num, int piriod_num) {
+void RepairVeiw::InitializeStudentSchedule(DECODE_SCHEDULE& schedule, int coma_num, int piriod_num, STUDENT student) {
     schedule.resize(piriod_num);
     for (int idx = 0; idx < piriod_num; idx++) {
         schedule[idx].resize(coma_num);
+    }
+    for (int day = 0; day < piriod_num; day++) {
+        for (int coma = 0; coma < coma_num; coma++) {
+            if (student.schedule[day][coma] == 1) {
+                schedule[day][coma] = '1';
+            }
+        }
+    }
+}
+
+
+void RepairVeiw::InitializeTeacherSchedule(DECODE_SCHEDULE& schedule, int coma_num, int piriod_num, TEACHER teacher) {
+    schedule.resize(piriod_num);
+    for (int idx = 0; idx < piriod_num; idx++) {
+        schedule[idx].resize(coma_num);
+    }
+    for (int day = 0; day < piriod_num; day++) {
+        for (int coma = 0; coma < coma_num; coma++) {
+            if (teacher.schedule[day][coma] == 1) {
+                schedule[day][coma] = '1';
+            }
+        }
     }
 }
 
@@ -64,7 +86,7 @@ void RepairVeiw::DecodeSchedule(STUDENTS students, TEACHERS teachers, ConvertMac
     
     // 生徒のスケジュールの復元
     BOOST_FOREACH(STUDENT student, students) {
-        InitializeSchedule(schedule, coma_num, piriod_num);
+        InitializeStudentSchedule(schedule, coma_num, piriod_num, student);
         csv.open("./schedule/student/" + student.name + ".csv", ios::app);
 //        OutputHead(csv, student.name, coma_num);
         for (int phase = 0; phase < convert_machine.devide_piriod_list.size(); phase++) {
@@ -90,7 +112,7 @@ void RepairVeiw::DecodeSchedule(STUDENTS students, TEACHERS teachers, ConvertMac
     
     // 講師のスケジュールの復元
     BOOST_FOREACH(TEACHER teacher, teachers) {
-        InitializeSchedule(schedule, coma_num, piriod_num);
+        InitializeTeacherSchedule(schedule, coma_num, piriod_num, teacher);
         csv.open("./schedule/teacher/" + teacher.name + ".csv", ios::app);
 //        OutputHead(csv, teacher.name, coma_num);
         for (int phase = 0; phase < convert_machine.devide_piriod_list.size(); phase++) {

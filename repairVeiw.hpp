@@ -36,7 +36,9 @@ public:
     void InitializeSubjectName();
     
     // スケジュール配列の初期化
-    void InitializeSchedule(DECODE_SCHEDULE&, int, int);
+    void InitializeStudentSchedule(DECODE_SCHEDULE&, int, int, STUDENT);
+    
+    void InitializeTeacherSchedule(DECODE_SCHEDULE&, int, int, TEACHER);
     
     // 生徒のcsvの初期化
     void InitializeStudentCSV(STUDENTS, int);
