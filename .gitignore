@@ -34,9 +34,8 @@
 *.app
 
 # other ignore file
-./refarence_document
-./data_bak
-./main
-./main.dSYM
-.vscode
+refarence_document/
+data_bak/
+main
+main.dSYM/
 
