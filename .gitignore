@@ -1,0 +1,42 @@
+### https://raw.github.com/github/gitignore/8edb8a95c4c4b3dce71a378aaaf89275510b9cef/c++.gitignore
+
+# Prerequisites
+*.d
+
+# Compiled Object files
+*.slo
+*.lo
+*.o
+*.obj
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Fortran module files
+*.mod
+*.smod
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+*.lib
+
+# Executables
+*.exe
+*.out
+*.app
+
+# other ignore file
+./refarence_document
+./data_bak
+./main
+./main.dSYM
+.vscode
+

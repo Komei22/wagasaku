@@ -51,6 +51,9 @@ public:
     // 変数のバイナリ宣言出力
     void OutputBinaryVariable(ofstream&, string);
     
+    // 整数変数の出力
+    void OutputObjectiveVariable(ofstream&, int);
+    
     // 制約式の出力
     void OutputJuniorVariable(ofstream &, string, int, int, int, int, int);
     

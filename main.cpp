@@ -85,7 +85,7 @@ int main() {
     
     // ソルバーで問題を解く
 //    system("./solver/glpsol --cpxlp ./lp/netz.lp -o ./sol/netz.sol");
-//    convert_machine.ExecuteConvertCommand();
+    convert_machine.ExecuteConvertCommand();
     
     // 解ファイルの読み込み
     cout << "Input solution file ..." << endl;

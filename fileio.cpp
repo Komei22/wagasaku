@@ -235,6 +235,10 @@ void FILEIO::OutputBinaryVariable(ofstream& lp, string str) {
     lp << format("%s ") % str;
 }
 
+void FILEIO::OutputObjectiveVariable(ofstream& lp, int student) {
+    lp << format("+ D_M_%s - D_m_%s ") % student % student;
+}
+
 
 void FILEIO::OutputJuniorVariable(ofstream& lp, string oper, int teacher, int student, int subject, int day, int coma) {
     lp << format("%s x_%s_%s_%s_%s_%s ") %oper % teacher % student % subject % day % coma;

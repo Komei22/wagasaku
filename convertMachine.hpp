@@ -40,8 +40,11 @@ public:
     // 分割した講習期間のリスト
     vector<DEVIDE_PIRIOD> devide_piriod_list;
     
-    // 書き込んだ制約の変数を保管
-    set<string> writed_variable;
+    // 書き込んだ制約の変数を保管 01変数
+    set<string> writed_binary_variable;
+    
+    // 書き込んだ制約の変数を保管 整数
+    set<string> writed_integer_variable;
     
     // 分割する必要がなかった場合、情報をセットする
     void SetConvertInfomation(STUDENTS&);
@@ -97,8 +100,10 @@ public:
     
     void SaveWritedHighVariable(int, int, int, int, int, int);
     
+    void SaveWritedIntegerVariable(int);
+    
     // 先生たちの指導回数の平均化目的関数
-    void GenerateTeachAverageingFunction(ofstream&);
+    void GenerateObjectiveFunction(ofstream&, STUDENTS, TEACHERS);
     
     // 講師の割り当て可能性の制約式
 	void GenerateTeacherAssignFomula(ofstream&,STUDENTS, TEACHERS, int);
@@ -115,8 +120,14 @@ public:
     // 先生たちの指導回数の平均化制約
     void GenerateTeachAverageingFomula(ofstream&,STUDENTS, TEACHERS, int);
     
+    // 生徒の1日のコマの平均化
+    void GenerateAveragingComaNumFomula(ofstream&, STUDENTS, TEACHERS, int);
+    
     // 変数の01変数宣言
-    void GenerateBinaryVariable(ofstream& ,STUDENTS, TEACHERS, int);
+    void GenerateBinaryVariable(ofstream&);
+    
+    // 変数の整数宣言
+    void GenerateIntegerVariable(ofstream&);
     
     // 変換コマンドの実行
     void ExecuteConvertCommand();

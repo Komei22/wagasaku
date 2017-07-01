@@ -582,7 +582,7 @@ int ConvertMachine::CheckRemainigComa(vector<int> coma_num_of_subject) {
 void ConvertMachine::GenerateLPProbrem(ofstream& lp, STUDENTS students, TEACHERS teachers, int phase) {
     fileout.OutputString(lp, "minimize");
     // 先生たちの指導回数の平均化（目的関数）
-    GenerateTeachAverageingFunction(lp);
+    GenerateObjectiveFunction(lp, students, teachers);
     fileout.OutputString(lp, "\nsubject to");
     // 先生の生徒に対する割り当て可能性
     GenerateTeacherAssignFomula(lp, students, teachers, phase);
@@ -594,17 +594,25 @@ void ConvertMachine::GenerateLPProbrem(ofstream& lp, STUDENTS students, TEACHERS
     GenerateHSFomula(lp, students, teachers, phase);
     // 先生の指導回数の平均化（制約）
     GenerateTeachAverageingFomula(lp, students, teachers, phase);
-    //     01変数であることを宣言
+    // 生徒の1日のコマ数の平均化
+//    GenerateAveragingComaNumFomula(lp, students, teachers, phase);
+    // 01変数であることを宣言
     fileout.OutputString(lp, "\nbinary");
-    GenerateBinaryVariable(lp, students, teachers, phase);
+    GenerateBinaryVariable(lp);
     fileout.OutputString(lp, "\ngeneral");
+//    GenerateIntegerVariable(lp);
     fileout.OutputString(lp, "y_M y_m");
     fileout.OutputString(lp, "\nend");
 }
 
 
-void ConvertMachine::GenerateTeachAverageingFunction(ofstream& lp) {
-    fileout.OutputString(lp, "y_M - y_m");
+void ConvertMachine::GenerateObjectiveFunction(ofstream& lp, STUDENTS students, TEACHERS teachers) {
+    // 講師の指導コマ数の平均化、生徒の日の指導数の平均化
+//    BOOST_FOREACH(STUDENT student, students) {
+//        fileout.OutputObjectiveVariable(lp, student.id);
+//        SaveWritedIntegerVariable(student.id);
+//    }
+    fileout.OutputString(lp, "+ y_M - y_m");
 }
 
 
@@ -612,8 +620,8 @@ void ConvertMachine::SaveWritedJuniorVariable(int teacher_id, int student_id, in
     ostringstream oss;
     oss << "x_" << teacher_id << "_" << student_id << "_" << subject << "_" << day << "_" << coma;
     string variable = oss.str();
-    if (writed_variable.find(variable) == writed_variable.end()) {
-        writed_variable.insert(variable);
+    if (writed_binary_variable.find(variable) == writed_binary_variable.end()) {
+        writed_binary_variable.insert(variable);
     }
 }
 
@@ -622,8 +630,29 @@ void ConvertMachine::SaveWritedHighVariable(int teacher_id, int student_id, int 
     ostringstream oss;
     oss << "h_" << teacher_id << "_" << student_id << "_" << subject << "_" << day << "_" << coma1 << "_" << coma2;
     string variable = oss.str();
-    if (writed_variable.find(variable) == writed_variable.end()) {
-        writed_variable.insert(variable);
+    if (writed_binary_variable.find(variable) == writed_binary_variable.end()) {
+        writed_binary_variable.insert(variable);
+    }
+}
+
+
+void ConvertMachine::SaveWritedIntegerVariable(int variable_data) {
+    ostringstream oss1, oss2;
+    oss1 << "D_M";
+    oss2 << "D_m";
+//    BOOST_FOREACH(int data, variable_data) {
+//        oss1 << "_" << data;
+//        oss2 << "_" << data;
+//    }
+            oss1 << "_" << variable_data;
+            oss2 << "_" << variable_data;
+    string variable1 = oss1.str();
+    string variable2 = oss2.str();
+    if (writed_integer_variable.find(variable1) == writed_integer_variable.end()) {
+        writed_integer_variable.insert(variable1);
+    }
+    if (writed_integer_variable.find(variable2) == writed_integer_variable.end()) {
+        writed_integer_variable.insert(variable2);
     }
 }
 
@@ -986,9 +1015,140 @@ void ConvertMachine::GenerateTeachAverageingFomula(ofstream& lp,STUDENTS student
     }
 }
 
-void ConvertMachine::GenerateBinaryVariable(ofstream& lp, STUDENTS students, TEACHERS teachers, int phase) {
-    for (set<string>::iterator wv_it = writed_variable.begin(); wv_it != writed_variable.end(); ++wv_it) {
-        //        cout << *wv_it << endl;
+void ConvertMachine::GenerateAveragingComaNumFomula(ofstream& lp, STUDENTS students, TEACHERS teachers, int phase) {
+    // ある生徒のある日のコマの最大値D_Mと最大値D_mを使って日のコマ数を平均化
+    BOOST_FOREACH(STUDENT student, students) {
+        int whole_day_idx_start = PhaseToWholeDayIndex(phase);
+        for (int day = whole_day_idx_start; day < whole_day_idx_start+devide_piriod_list[phase].size(); day++) {
+            bool isOutput = false;
+            for (int coma = 0; coma < student.schedule[day].size(); coma++) {
+                for (int subject = 0; subject < student.subject.size(); subject++) {
+                    BOOST_FOREACH(TEACHER teacher, teachers) {
+                        if (teacher.teach_subject[subject] == 1 && student.coma_of_subject_phase[phase][subject] > 0) {
+                            if (student.grade == JUNIOR) {  //中学生の場合
+                                if (student.nomination_teacher_id[subject].empty()) {  //講師の指定がなかった場合
+                                    if (teacher.schedule[day][coma] == 1 && student.schedule[day][coma] == 1) {  //どちらのスケジュールも空いていたら
+                                        //x_teacherid_studentid_subject_day_comaを生成
+                                        fileout.OutputJuniorVariable(lp, "+", teacher.id, student.id, subject, day, coma);
+                                        isOutput = true;
+                                        SaveWritedJuniorVariable(teacher.id, student.id, subject, day, coma);
+                                    }
+                                } else {  //講師の指定があった場合
+                                    BOOST_FOREACH(int nominated_teacher_id, student.nomination_teacher_id[subject]) {
+                                        if (nominated_teacher_id == teacher.id) {  //ある生徒のある科目の指定講師だった場合
+                                            if (teacher.schedule[day][coma] == 1 && student.schedule[day][coma] == 1) {  //どちらのスケジュールも空いていたら
+                                                //x_teacherid_studentid_subject_day_comaを生成
+                                                fileout.OutputJuniorVariable(lp, "+", teacher.id, student.id, subject, day, coma);
+                                                isOutput = true;
+                                                SaveWritedJuniorVariable(teacher.id, student.id, subject, day, coma);
+                                            }
+                                        }
+                                    }
+                                }
+                            } else {
+                                if (student.nomination_teacher_id[subject].empty()) {  //講師の指定がなかった場合
+                                    if (coma < student.schedule[day].size()-1 && teacher.schedule[day][coma] == 1 && student.schedule[day][coma] == 1 && teacher.schedule[day][coma+1] == 1 && student.schedule[day][coma+1] == 1) {
+                                        fileout.OutputHighVariable(lp, "+ 2", teacher.id, student.id, subject, day, coma, coma+1);
+                                        SaveWritedHighVariable(teacher.id, student.id, subject, day, coma, coma+1);
+                                        isOutput = true;
+                                    }
+                                } else {  //講師の指定があった場合
+                                    BOOST_FOREACH(int nominated_teacher_id, student.nomination_teacher_id[subject]) {
+                                        if (nominated_teacher_id == teacher.id) {  //ある生徒のある科目の指定講師だった場合
+                                            if (coma < student.schedule[day].size()-1 && teacher.schedule[day][coma] == 1 && student.schedule[day][coma] == 1 && teacher.schedule[day][coma+1] == 1 && student.schedule[day][coma+1] == 1) {
+                                                fileout.OutputHighVariable(lp, "+ 2", teacher.id, student.id, subject, day, coma, coma+1);
+                                                SaveWritedHighVariable(teacher.id, student.id, subject, day, coma, coma+1);
+                                                isOutput = true;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            if(isOutput) {
+                ostringstream oss;
+                oss << "- D_M_" << student.id << " <= 0";
+                string str = oss.str();
+                fileout.OutputString(lp, str);
+            }
+        }
+    }
+    
+    BOOST_FOREACH(STUDENT student, students) {
+        int whole_day_idx_start = PhaseToWholeDayIndex(phase);
+        for (int day = whole_day_idx_start; day < whole_day_idx_start+devide_piriod_list[phase].size(); day++) {
+            bool isOutput = false;
+            for (int coma = 0; coma < student.schedule[day].size(); coma++) {
+                for (int subject = 0; subject < student.subject.size(); subject++) {
+                    BOOST_FOREACH(TEACHER teacher, teachers) {
+                        if (teacher.teach_subject[subject] == 1 && student.coma_of_subject_phase[phase][subject] > 0) {
+                            if (student.grade == JUNIOR) {  //中学生の場合
+                                if (student.nomination_teacher_id[subject].empty()) {  //講師の指定がなかった場合
+                                    if (teacher.schedule[day][coma] == 1 && student.schedule[day][coma] == 1) {  //どちらのスケジュールも空いていたら
+                                        //x_teacherid_studentid_subject_day_comaを生成
+                                        fileout.OutputJuniorVariable(lp, "+", teacher.id, student.id, subject, day, coma);
+                                        isOutput = true;
+                                        SaveWritedJuniorVariable(teacher.id, student.id, subject, day, coma);
+                                    }
+                                } else {  //講師の指定があった場合
+                                    BOOST_FOREACH(int nominated_teacher_id, student.nomination_teacher_id[subject]) {
+                                        if (nominated_teacher_id == teacher.id) {  //ある生徒のある科目の指定講師だった場合
+                                            if (teacher.schedule[day][coma] == 1 && student.schedule[day][coma] == 1) {  //どちらのスケジュールも空いていたら
+                                                //x_teacherid_studentid_subject_day_comaを生成
+                                                fileout.OutputJuniorVariable(lp, "+", teacher.id, student.id, subject, day, coma);
+                                                isOutput = true;
+                                                SaveWritedJuniorVariable(teacher.id, student.id, subject, day, coma);
+                                            }
+                                        }
+                                    }
+                                }
+                            } else {
+                                if (student.nomination_teacher_id[subject].empty()) {  //講師の指定がなかった場合
+                                    if (coma < student.schedule[day].size()-1 && teacher.schedule[day][coma] == 1 && student.schedule[day][coma] == 1 && teacher.schedule[day][coma+1] == 1 && student.schedule[day][coma+1] == 1) {
+                                        fileout.OutputHighVariable(lp, "+ 2", teacher.id, student.id, subject, day, coma, coma+1);
+                                        SaveWritedHighVariable(teacher.id, student.id, subject, day, coma, coma+1);
+                                        isOutput = true;
+                                    }
+                                } else {  //講師の指定があった場合
+                                    BOOST_FOREACH(int nominated_teacher_id, student.nomination_teacher_id[subject]) {
+                                        if (nominated_teacher_id == teacher.id) {  //ある生徒のある科目の指定講師だった場合
+                                            if (coma < student.schedule[day].size()-1 && teacher.schedule[day][coma] == 1 && student.schedule[day][coma] == 1 && teacher.schedule[day][coma+1] == 1 && student.schedule[day][coma+1] == 1) {
+                                                fileout.OutputHighVariable(lp, "+ 2", teacher.id, student.id, subject, day, coma, coma+1);
+                                                SaveWritedHighVariable(teacher.id, student.id, subject, day, coma, coma+1);
+                                                isOutput = true;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            if(isOutput) {
+                ostringstream oss;
+                oss << "- D_m_" << student.id << " >= 0";
+                string str = oss.str();
+                fileout.OutputString(lp, str);
+            }
+        }
+    }
+    
+    
+}
+
+void ConvertMachine::GenerateBinaryVariable(ofstream& lp) {
+    for (set<string>::iterator wv_it = writed_binary_variable.begin(); wv_it != writed_binary_variable.end(); ++wv_it) {
+        fileout.OutputBinaryVariable(lp, *wv_it);
+    }
+    fileout.OutputString(lp, "");
+}
+
+void ConvertMachine::GenerateIntegerVariable(ofstream& lp) {
+    for (set<string>::iterator wv_it = writed_integer_variable.begin(); wv_it != writed_integer_variable.end(); ++wv_it) {
         fileout.OutputBinaryVariable(lp, *wv_it);
     }
     fileout.OutputString(lp, "");
@@ -998,7 +1158,7 @@ void ConvertMachine::ExecuteConvertCommand() {
     vector<string> command_set;
     for (int phase_idx = 0; phase_idx < devide_piriod_list.size(); phase_idx++) {
         ostringstream oss;
-        oss << "./solver/glpsol --cpxlp ./lp/netz" << phase_idx << ".lp -o ./sol/netz" << phase_idx << ".sol";
+        oss << "/usr/local/bin/glpsol --cpxlp ./lp/netz" << phase_idx << ".lp -o ./sol/netz" << phase_idx << ".sol";
         string command = oss.str();
         command_set.push_back(command);
     }
